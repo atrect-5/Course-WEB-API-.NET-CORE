@@ -17,6 +17,7 @@ ScaffoldingReadMe.txt
 
 # Visual Studio Code
 .vscode/
+.vs/
 
 # NuGet packages
 *.nupkg
