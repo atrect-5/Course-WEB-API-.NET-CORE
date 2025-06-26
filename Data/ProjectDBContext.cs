@@ -56,7 +56,11 @@ namespace Data
 
             base.OnModelCreating(modelBuilder);
         }
-        // Define DbSet properties for your entities
-        // public DbSet<YourEntity> YourEntities { get; set; }
+        
+        public DbSet<User> Users { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<MoneyAccount> MoneyAccounts { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Transfer> Transfers { get; set; }
     }
 }
