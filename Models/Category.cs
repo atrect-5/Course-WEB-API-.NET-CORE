@@ -27,6 +27,17 @@ namespace Models
         public string? Type { get; set; }
 
         /// <summary>
+        /// Creator of the category (Null represents global Category)
+        /// </summary>
+        public int? UserId { get; set; }
+
+        /// <summary>
+        /// User who create the category (Only appears to him)
+        /// </summary>
+        public User? User { get; set; }
+
+
+        /// <summary>
         /// Collection of transactions associated with this category.
         /// </summary>
         public ICollection<Transaction>? Transactions { get; set; }
