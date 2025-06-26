@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add conection to the DataBase
 builder.Services.AddDbContext<ProjectDBContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("ProjectServer")));
 

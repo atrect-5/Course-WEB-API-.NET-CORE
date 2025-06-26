@@ -17,6 +17,9 @@ namespace Data
             modelBuilder.Entity<User>()
                 .Property(f => f.Id)
                 .ValueGeneratedOnAdd();
+            modelBuilder.Entity<User>()
+                .HasIndex(f => f.Email)
+                .IsUnique();
 
             modelBuilder.Entity<Category>().ToTable("Category");
             modelBuilder.Entity<Category>()
