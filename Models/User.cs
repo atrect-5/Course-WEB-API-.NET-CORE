@@ -45,5 +45,10 @@ namespace Models
         /// Collection of transfer records associated with the user.
         /// </summary>
         public ICollection<Transfer>? Transfer { get; set; }
+
+        /// <summary>
+        /// Collection of Categories made by the user
+        /// </summary>
+        public ICollection<Category>? Categories { get; set; }
     }
 }

@@ -8,8 +8,9 @@ using Models;
 
 namespace Data
 {
-    public class ProjectDBContext(DbContextOptions<ProjectDBContext> options) : DbContext(options)
+    public class ProjectDBContext : DbContext
     {
+        public ProjectDBContext(DbContextOptions<ProjectDBContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().ToTable("User");
@@ -36,6 +37,19 @@ namespace Data
             modelBuilder.Entity<Transfer>()
                 .Property(f => f.Id)
                 .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<Transfer>()
+                .HasOne(t => t.MoneyAccountSend)
+                .WithMany(ma => ma.TransfersSent)
+                .HasForeignKey(t => t.MoneyAccountSendId)
+                .OnDelete(DeleteBehavior.Restrict); // evita conflictos de eliminación
+
+            modelBuilder.Entity<Transfer>()
+                .HasOne(t => t.MoneyAccountReceive)
+                .WithMany(ma => ma.TransfersReceived)
+                .HasForeignKey(t => t.MoneyAccountReceiveId)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
             base.OnModelCreating(modelBuilder);
         }
