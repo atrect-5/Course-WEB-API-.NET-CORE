@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -30,12 +31,12 @@ namespace Services
         IEnumerable<User> GetAllUsers();
 
         /// <summary>
-        /// Retrieves a user by their unique identifier.
+        /// Retrieves a user that matches the specified filter criteria.
         /// </summary>
-        /// <param name="id">The unique identifier of the user to retrieve. Must be a positive integer.</param>
-        /// <returns>The <see cref="User"/> object corresponding to the specified <paramref name="id"/>,  or <see
-        /// langword="null"/> if no user with the given identifier exists.</returns>
-        User GetUserById(int id);
+        /// <param name="filter">A LINQ expression used to specify the criteria for selecting a user. The expression should define the
+        /// conditions that the user must meet.</param>
+        /// <returns>The user that matches the specified filter criteria, or <see langword="null"/> if no user is found.</returns>
+        User? GetUser(Expression<Func<User, bool>> filter);
         
         /// <summary>
         /// Updates the specified user with new information.
@@ -44,7 +45,7 @@ namespace Services
         /// not be null and must include a valid user identifier.</param>
         /// <returns>The updated <see cref="User"/> object reflecting the changes.  Returns <see langword="null"/> if the update
         /// operation fails or the user does not exist.</returns>
-        User Update(User model);
+        User? Update(User model);
 
         /// <summary>
         /// Deletes the entity with the specified identifier.
