@@ -11,8 +11,10 @@ namespace Models
     /// </summary>
     public class Category
     {
-        public const string IncomeType = "INCOME";
-        public const string ExpenditureType = "EXPENDITURE";
+        /// <summary>
+        /// A collection of valid category types.
+        /// </summary>
+        public static readonly IReadOnlyCollection<string> ValidTypes = new List<string> { "INCOME", "EXPENDITURE" }.AsReadOnly();
 
         /// <summary>
         /// Category identifier.

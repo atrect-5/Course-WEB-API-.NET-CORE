@@ -1,4 +1,4 @@
-﻿using Data;
+﻿﻿using Data;
 using Models;
 using Services;
 using System;
@@ -18,9 +18,10 @@ namespace Repositories
         {
             ArgumentNullException.ThrowIfNull(model);
             model.Type = model.Type.ToUpper();
-            if (model.Type != Category.IncomeType && model.Type != Category.ExpenditureType)
+            if (!Category.ValidTypes.Contains(model.Type))
             {
-                throw new ArgumentException($"El tipo de categoría debe ser '{Category.IncomeType}' o '{Category.ExpenditureType}'.", nameof(model));
+                string validTypesString = string.Join("', '", Category.ValidTypes);
+                throw new ArgumentException($"El tipo de categoría debe ser uno de los siguientes: '{validTypesString}'.", nameof(model));
             }
             _dbContext.Categories.Add(model);
             _dbContext.SaveChanges();
@@ -71,9 +72,10 @@ namespace Repositories
             ArgumentNullException.ThrowIfNull(model);
 
             model.Type = model.Type.ToUpper();
-            if (model.Type != Category.IncomeType && model.Type != Category.ExpenditureType)
+            if (!Category.ValidTypes.Contains(model.Type))
             {
-                throw new ArgumentException($"El tipo de categoría debe ser '{Category.IncomeType}' o '{Category.ExpenditureType}'.", nameof(model));
+                string validTypesString = string.Join("', '", Category.ValidTypes);
+                throw new ArgumentException($"El tipo de categoría debe ser uno de los siguientes: '{validTypesString}'.", nameof(model));
             }
 
             var categoryInDb = _dbContext.Categories.Find(model.Id);
