@@ -17,25 +17,30 @@ namespace Services
         bool Add(MoneyAccount model);
 
         /// <summary>
-        /// Retrieves a collection of all money accounts associated with the specified user.
+        /// Retrieves a collection of money accounts associated with the specified user ID.
         /// </summary>
         /// <param name="userId">The unique identifier of the user whose money accounts are to be retrieved. Must be a positive integer.</param>
-        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="MoneyAccount"/> objects representing the user's money accounts. Returns an empty collection if no accounts are found.</returns>
-        IEnumerable<MoneyAccount> GetMoneyAccountsByUserId(int userId);
+        /// <param name="nameFilter">An optional filter to retrieve accounts whose names contain the specified substring. If <see
+        /// langword="null"/>, no name-based filtering is applied.</param>
+        /// <param name="typeFilter">An optional filter to retrieve accounts of a specific type. If <see langword="null"/>, no type-based
+        /// filtering is applied.</param>
+        /// <returns>A collection of <see cref="MoneyAccount"/> objects associated with the specified user ID. Returns an empty
+        /// collection if no accounts match the criteria.</returns>
+        IEnumerable<MoneyAccount> GetMoneyAccountsByUserId(int userId, string? nameFilter = null, string? typeFilter = null);
 
         /// <summary>
         /// Retrieves a money account by its unique identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the money account to retrieve. Must be a positive integer.</param>
         /// <returns>The <see cref="MoneyAccount"/> object corresponding to the specified identifier, or <see langword="null"/> if no account with the given identifier exists.</returns>
-        MoneyAccount GetMoneyAccountById(int id);
+        MoneyAccount? GetMoneyAccountById(int id);
 
         /// <summary>
         /// Updates an existing money account with new information.
         /// </summary>
         /// <param name="model">The updated money account model. Must not be null and must include a valid identifier.</param>
         /// <returns>The updated <see cref="MoneyAccount"/> object reflecting the changes, or <see langword="null"/> if the update operation fails or the account does not exist.</returns>
-        MoneyAccount Update(MoneyAccount model);
+        MoneyAccount? Update(MoneyAccount model);
 
         /// <summary>
         /// Deletes the specified money account from the system.

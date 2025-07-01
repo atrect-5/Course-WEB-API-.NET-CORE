@@ -17,12 +17,7 @@ namespace Repositories
         public bool Add(Category model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            model.Type = model.Type.ToUpper();
-            if (!Category.ValidTypes.Contains(model.Type))
-            {
-                string validTypesString = string.Join("', '", Category.ValidTypes);
-                throw new ArgumentException($"El tipo de categoría debe ser uno de los siguientes: '{validTypesString}'.", nameof(model));
-            }
+            ValidateCategory(model);
             _dbContext.Categories.Add(model);
             _dbContext.SaveChanges();
             return true;
@@ -62,22 +57,14 @@ namespace Repositories
             return query.ToList();
         }
 
-        public Category? GetCategoryById(int id)
-        {
-            return _dbContext.Categories.Find(id);
-        }
+        public Category? GetCategoryById(int id) => 
+            _dbContext.Categories.Find(id);
+
 
         public Category? Update(Category model)
         {
             ArgumentNullException.ThrowIfNull(model);
-
-            model.Type = model.Type.ToUpper();
-            if (!Category.ValidTypes.Contains(model.Type))
-            {
-                string validTypesString = string.Join("', '", Category.ValidTypes);
-                throw new ArgumentException($"El tipo de categoría debe ser uno de los siguientes: '{validTypesString}'.", nameof(model));
-            }
-
+            ValidateCategory(model);
             var categoryInDb = _dbContext.Categories.Find(model.Id);
             if (categoryInDb is null)
             {
@@ -87,6 +74,21 @@ namespace Repositories
             categoryInDb.Type = model.Type;
             _dbContext.SaveChanges();
             return categoryInDb;
+        }
+
+        /// <summary>
+        /// Validates the category type.
+        /// </summary>
+        /// <param name="model">The <see cref="Category"/> instance to validate.</param>
+        /// <exception cref="ArgumentException">Thrown if the category type is not one of the valid types.</exception>
+        private static void ValidateCategory(Category model)
+        {
+            model.Type = model.Type.ToUpper();
+            if (!Category.ValidTypes.Contains(model.Type))
+            {
+                string validTypesString = string.Join("', '", Category.ValidTypes);
+                throw new ArgumentException($"El tipo de categoría debe ser uno de los siguientes: '{validTypesString}'.", nameof(model));
+            }
         }
     }
 }

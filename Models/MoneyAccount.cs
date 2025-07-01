@@ -11,6 +11,14 @@ namespace Models
     /// </summary>
     public class MoneyAccount
     {
+        /// <summary>
+        /// A collection of valid account types.
+        /// </summary>
+        public static readonly IReadOnlyCollection<string> ValidAccountTypes = new List<string> { "CASH", "DEBIT", "CREDIT" }.AsReadOnly();
+
+        /// <summary
+        /// Account identifier.
+        /// </summary>
         public int Id { get; set; }
         /// <summary>
         /// Name of the account.
