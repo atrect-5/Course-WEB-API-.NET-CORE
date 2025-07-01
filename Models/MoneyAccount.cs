@@ -48,7 +48,7 @@ namespace Models
         /// <summary>
         /// User who owns the account.
         /// </summary>
-        public required User User { get; set; }
+        public User User { get; set; } = null!;
 
         /// <summary>
         /// Transactions associated with this account.

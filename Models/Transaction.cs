@@ -39,7 +39,7 @@ namespace Models
         /// <summary>
         /// User who made the transaction.
         /// </summary>
-        public required User User { get; set; }
+        public User User { get; set; } = null!;
 
         /// <summary>
         /// Id of the category of the transaction.
@@ -49,7 +49,7 @@ namespace Models
         /// <summary>
         /// Category of the transaction.
         /// </summary>
-        public required Category Category { get; set; }
+        public Category Category { get; set; } = null!;
 
         /// <summary>
         /// Id of the money account used in the transaction.
@@ -59,7 +59,7 @@ namespace Models
         /// <summary>
         /// Money account used in the transaction.
         /// </summary>
-        public required MoneyAccount MoneyAccount { get; set; }
+        public MoneyAccount MoneyAccount { get; set; } = null!;
 
         /// <summary>
         /// Optional. Foreign key for the Transfer.

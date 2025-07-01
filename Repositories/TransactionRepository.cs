@@ -38,6 +38,8 @@ namespace Repositories
                 return false;
             }
 
+            PreventDirectModificationOfTransferTransaction(transaction);
+
             var account = _dbContext.MoneyAccounts.Find(transaction.MoneyAccountId);
             var category = _dbContext.Categories.Find(transaction.CategoryId);
 
@@ -81,6 +83,8 @@ namespace Repositories
                 return null;
             }
 
+            PreventDirectModificationOfTransferTransaction(transactionInDb);
+
             // Revertir el impacto de la transacción original en el saldo
             var originalAccount = _dbContext.MoneyAccounts.Find(transactionInDb.MoneyAccountId);
             var originalCategory = _dbContext.Categories.Find(transactionInDb.CategoryId);
@@ -122,6 +126,19 @@ namespace Repositories
             {
                 if (category.Type == "INCOME") account.Balance -= amount;
                 else account.Balance += amount; // Assumes EXPENDITURE
+            }
+        }
+
+        /// <summary>
+        /// Ensures that a transaction is not part of a transfer, preventing direct modification or deletion.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <exception cref="InvalidOperationException">Thrown if the transaction is linked to a transfer.</exception>
+        private static void PreventDirectModificationOfTransferTransaction(Transaction transaction)
+        {
+            if (transaction.TransferId is not null)
+            {
+                throw new InvalidOperationException("Las transacciones que forman parte de una transferencia no se pueden modificar o eliminar directamente. Opere sobre la transferencia original.");
             }
         }
     }

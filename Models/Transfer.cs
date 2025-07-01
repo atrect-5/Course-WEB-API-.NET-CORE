@@ -41,7 +41,7 @@ namespace Models
         /// <summary>
         /// User who made the transfer.
         /// </summary>
-        public required User User { get; set; }
+        public User User { get; set; } = null!;
 
         /// <summary>
         /// Id of the receiving money account.
@@ -51,7 +51,7 @@ namespace Models
         /// <summary>
         /// Receiving money account.
         /// </summary>
-        public required MoneyAccount MoneyAccountReceive { get; set; }
+        public MoneyAccount MoneyAccountReceive { get; set; } = null!;
 
         /// <summary>
         /// Id of the sending money account.
@@ -61,7 +61,7 @@ namespace Models
         /// <summary>
         /// Sending money account.
         /// </summary>
-        public required MoneyAccount MoneyAccountSend { get; set; }
+        public MoneyAccount MoneyAccountSend { get; set; } = null!;
 
         /// <summary>
         /// The two transactions (income and expenditure) that make up this transfer.
