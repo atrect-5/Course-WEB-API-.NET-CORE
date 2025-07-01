@@ -11,6 +11,9 @@ namespace Models
     /// </summary>
     public class Category
     {
+        public const string IncomeType = "INCOME";
+        public const string ExpenditureType = "EXPENDITURE";
+
         /// <summary>
         /// Category identifier.
         /// </summary>

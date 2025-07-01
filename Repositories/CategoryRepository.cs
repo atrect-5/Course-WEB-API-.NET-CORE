@@ -17,6 +17,11 @@ namespace Repositories
         public bool Add(Category model)
         {
             ArgumentNullException.ThrowIfNull(model);
+            model.Type = model.Type.ToUpper();
+            if (model.Type != Category.IncomeType && model.Type != Category.ExpenditureType)
+            {
+                throw new ArgumentException($"El tipo de categoría debe ser '{Category.IncomeType}' o '{Category.ExpenditureType}'.", nameof(model));
+            }
             _dbContext.Categories.Add(model);
             _dbContext.SaveChanges();
             return true;
@@ -35,7 +40,7 @@ namespace Repositories
             return true;
         }
 
-        public IEnumerable<Category> GetCategoriesByUserId(int userId, string? nameFilter = null)
+        public IEnumerable<Category> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
         {
             // Consulta para obtener las categorías asociadas al usuario y las globales (UserId == null).
             var query = _dbContext.Categories.Where(c => c.UserId == userId || c.UserId == null);
@@ -43,7 +48,14 @@ namespace Repositories
             // Si se proporciona un filtro de nombre, lo aplicamos a la consulta ANTES de ejecutarla.
             if (!string.IsNullOrWhiteSpace(nameFilter))
             {
-                query = query.Where(c => c.Name.Contains(nameFilter));
+                // Usamos la sobrecarga con StringComparison para una búsqueda eficiente y no sensible a mayúsculas/minúsculas.
+                query = query.Where(c => c.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Si se proporciona un filtro de tipo, lo aplicamos también.
+            if (!string.IsNullOrWhiteSpace(typeFilter))
+            {
+                query = query.Where(c => c.Type.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
             }
 
             return query.ToList();
@@ -57,12 +69,20 @@ namespace Repositories
         public Category? Update(Category model)
         {
             ArgumentNullException.ThrowIfNull(model);
+
+            model.Type = model.Type.ToUpper();
+            if (model.Type != Category.IncomeType && model.Type != Category.ExpenditureType)
+            {
+                throw new ArgumentException($"El tipo de categoría debe ser '{Category.IncomeType}' o '{Category.ExpenditureType}'.", nameof(model));
+            }
+
             var categoryInDb = _dbContext.Categories.Find(model.Id);
             if (categoryInDb is null)
             {
                 return null;
             }
             categoryInDb.Name = model.Name;
+            categoryInDb.Type = model.Type;
             _dbContext.SaveChanges();
             return categoryInDb;
         }

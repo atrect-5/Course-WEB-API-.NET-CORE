@@ -1,4 +1,4 @@
-﻿using Models;
+﻿﻿using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +19,10 @@ namespace Services
 
         /// <param name="userId">The unique identifier of the user.</param>
         /// <param name="nameFilter">Optional. A name to filter the categories by.</param>
+        /// <param name="typeFilter">Optional. The type to filter categories by (e.g., "INCOME" or "EXPENDITURE").</param>
         /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="Category"/> objects linked to the user and any global 
-        /// categories, optionally filtered by name.</returns>
-        IEnumerable<Category> GetCategoriesByUserId(int userId, string? nameFilter = null);
+        /// categories, optionally filtered by name and/or type.</returns>
+        IEnumerable<Category> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null);
 
         /// <summary>
         /// Retrieves the category associated with the specified identifier.
