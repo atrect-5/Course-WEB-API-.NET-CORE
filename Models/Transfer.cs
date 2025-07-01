@@ -62,5 +62,10 @@ namespace Models
         /// Sending money account.
         /// </summary>
         public required MoneyAccount MoneyAccountSend { get; set; }
+
+        /// <summary>
+        /// The two transactions (income and expenditure) that make up this transfer.
+        /// </summary>
+        public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     }
 }

@@ -60,5 +60,15 @@ namespace Models
         /// Money account used in the transaction.
         /// </summary>
         public required MoneyAccount MoneyAccount { get; set; }
+
+        /// <summary>
+        /// Optional. Foreign key for the Transfer.
+        /// </summary>
+        public int? TransferId { get; set; }
+
+        /// <summary>
+        /// Optional. The transfer associated with this transaction (Only when the transaction was made by a transfer).
+        /// </summary>
+        public Transfer? Transfer { get; set; }
     }
 }
