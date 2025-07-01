@@ -19,12 +19,12 @@ namespace Models
         /// <summary>
         /// Name of the category.
         /// </summary>
-        public string? Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Type of the category (income or expenditure).
         /// </summary>
-        public string? Type { get; set; }
+        public required string Type { get; set; }
 
         /// <summary>
         /// Creator of the category (Null represents global Category)

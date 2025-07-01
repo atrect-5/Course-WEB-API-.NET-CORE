@@ -19,17 +19,17 @@ namespace Models
         /// <summary>
         /// Name of the user.
         /// </summary>
-        public string? Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Email address of the user.
         /// </summary>
-        public string? Email { get; set; }
+        public required string Email { get; set; }
 
         /// <summary>
         /// Password of the user.
         /// </summary>
-        public string? Password { get; set; }
+        public required string Password { get; set; }
 
         /// <summary>
         /// Collection of money accounts associated with the user.

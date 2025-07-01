@@ -15,12 +15,12 @@ namespace Models
         /// <summary>
         /// Name of the account.
         /// </summary>
-        public string? Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Type of account: Cash, Debit, or Credit.
         /// </summary>
-        public string? AccountType { get; set; }
+        public required string AccountType { get; set; }
 
         /// <summary>
         /// Current balance of the account.
