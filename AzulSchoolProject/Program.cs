@@ -6,6 +6,7 @@ using Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container. 
+builder.Services.AddScoped<IAuthenticationService, AuthenticationRepository>();
 builder.Services.AddScoped<IUserService, UserRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryRepository>();
 builder.Services.AddScoped<IMoneyAccountService, MoneyAccountRepository>();
