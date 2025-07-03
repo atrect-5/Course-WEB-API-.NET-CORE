@@ -1,3 +1,4 @@
+using AzulSchoolProject.Middleware;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Repositories;
@@ -30,6 +31,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
