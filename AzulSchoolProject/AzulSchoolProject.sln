@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Repositories", "..\Reposito
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "..\Models\Models.csproj", "{7588DA17-E1B6-4DC3-9F0E-B45D197582E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dtos", "..\Dtos\Dtos.csproj", "{E3183F9D-F53C-46E1-8D40-41F6B81018FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{7588DA17-E1B6-4DC3-9F0E-B45D197582E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7588DA17-E1B6-4DC3-9F0E-B45D197582E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7588DA17-E1B6-4DC3-9F0E-B45D197582E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3183F9D-F53C-46E1-8D40-41F6B81018FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3183F9D-F53C-46E1-8D40-41F6B81018FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3183F9D-F53C-46E1-8D40-41F6B81018FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3183F9D-F53C-46E1-8D40-41F6B81018FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
