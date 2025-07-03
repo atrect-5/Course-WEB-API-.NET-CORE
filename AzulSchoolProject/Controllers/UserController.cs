@@ -41,9 +41,9 @@ namespace AzulSchoolProject.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, [FromBody] CreateUserDto createUserDto)
+        public IActionResult UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
         {
-            var updatedUser = _userService.Update(id, createUserDto);
+            var updatedUser = _userService.Update(id, updateUserDto);
             if (updatedUser is null)
                 return NotFound();
 

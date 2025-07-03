@@ -1,4 +1,4 @@
-﻿using Dtos;
+﻿﻿using Dtos;
 using Models;
 using System;
 using System.Collections.Generic;
@@ -39,10 +39,10 @@ namespace Services
         /// Updates an existing user with the specified ID using the provided data.
         /// </summary>
         /// <param name="id">The unique identifier of the user to update. Must be a positive integer.</param>
-        /// <param name="model">The data used to update the user. Cannot be null.</param>
+        /// <param name="model">The data transfer object with the fields to update. All fields are optional.</param>
         /// <returns>A <see cref="UserDto"/> representing the updated user, or <see langword="null"/> if no user with the
         /// specified ID exists.</returns>
-        UserDto? Update(int id, CreateUserDto model);
+        UserDto? Update(int id, UpdateUserDto model);
 
         /// <summary>
         /// Deletes the entity with the specified identifier.

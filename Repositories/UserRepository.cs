@@ -20,9 +20,8 @@ namespace Repositories
             ArgumentNullException.ThrowIfNull(createUserDto);
             // Validar que el email no exista ya en la base de datos.
             if (_dbContext.Users.Any(u => u.Email == createUserDto.Email))
-            {
                 throw new ArgumentException("El correo electrónico ya está en uso.", nameof(createUserDto));
-            }
+            
             var user = new User
             {
                 Name = createUserDto.Name,
@@ -63,7 +62,7 @@ namespace Repositories
         }
 
 
-        public UserDto? Update(int id, CreateUserDto updateUserDto)
+        public UserDto? Update(int id, UpdateUserDto updateUserDto)
         {
             ArgumentNullException.ThrowIfNull(updateUserDto);
             var userInDb = _dbContext.Users.Find(id);
@@ -71,8 +70,12 @@ namespace Repositories
             if (userInDb is null)
                 return null;
             
-            userInDb.Name = updateUserDto.Name;
-            userInDb.Password = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Password);
+            // Actualiza si es que se mando la informacion
+            if (!string.IsNullOrWhiteSpace(updateUserDto.Name))
+                userInDb.Name = updateUserDto.Name;
+            if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
+                userInDb.Password = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Password);
+                
             _dbContext.SaveChanges();
             return new UserDto { Id = userInDb.Id, Name = userInDb.Name, Email = userInDb.Email};
         }
