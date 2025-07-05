@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile> <!-- Enable XML documentation generation -->
+    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Suppress warnings for missing XML comments --> 
   </PropertyGroup>
 
   <ItemGroup>
