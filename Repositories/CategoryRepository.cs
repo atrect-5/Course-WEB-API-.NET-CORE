@@ -1,4 +1,5 @@
 ﻿﻿using Data;
+using Dtos.Category;
 using Models;
 using Services;
 using System;
@@ -14,66 +15,94 @@ namespace Repositories
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
 
-        public bool Add(Category model)
+        public CategoryDto Add(CreateCategoryDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            ValidateCategory(model);
-            _dbContext.Categories.Add(model);
+            var category = new Category
+            {
+                Name = model.Name,
+                Type = model.Type,
+                UserId = model.UserId
+            };
+            ValidateCategory(category);
+            _dbContext.Categories.Add(category);
             _dbContext.SaveChanges();
-            return true;
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Type = category.Type,
+                UserId = category.UserId
+            };
         }
 
         public bool Delete(int id)
         {
             var category = _dbContext.Categories.Find(id);
             if (category is null)
-            {
                 return false;
-            }
 
             _dbContext.Categories.Remove(category);
             _dbContext.SaveChanges();
             return true;
         }
 
-        public IEnumerable<Category> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
+        public IEnumerable<CategoryDto> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
         {
             // Consulta para obtener las categorías asociadas al usuario y las globales (UserId == null).
             var query = _dbContext.Categories.Where(c => c.UserId == userId || c.UserId == null);
 
             // Si se proporciona un filtro de nombre, lo aplicamos a la consulta ANTES de ejecutarla.
             if (!string.IsNullOrWhiteSpace(nameFilter))
-            {
-                // Usamos la sobrecarga con StringComparison para una búsqueda eficiente y no sensible a mayúsculas/minúsculas.
                 query = query.Where(c => c.Name.ToLower().Contains(nameFilter.ToLower()));
-            }
 
             // Si se proporciona un filtro de tipo, lo aplicamos también.
             if (!string.IsNullOrWhiteSpace(typeFilter))
-            {
                 query = query.Where(c => c.Type.ToLower().Equals(typeFilter.ToLower()));
-            }
 
-            return query.ToList();
+            return query.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Type = c.Type,
+                UserId = c.UserId
+            }).ToList();
         }
 
-        public Category? GetCategoryById(int id) => 
-            _dbContext.Categories.Find(id);
+        public CategoryDto? GetCategoryById(int id)
+        {
+            var category = _dbContext.Categories.Find(id);
+            if (category is null)
+                return null;
+
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Type = category.Type,
+                UserId = category.UserId
+            };
+        }
 
 
-        public Category? Update(Category model)
+        public CategoryDto? Update(int id, UpdateCategoryDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            ValidateCategory(model);
-            var categoryInDb = _dbContext.Categories.Find(model.Id);
+            var categoryInDb = _dbContext.Categories.Find(id);
             if (categoryInDb is null)
-            {
                 return null;
-            }
+            
             categoryInDb.Name = model.Name;
             categoryInDb.Type = model.Type;
+            ValidateCategory(categoryInDb);
             _dbContext.SaveChanges();
-            return categoryInDb;
+            return new CategoryDto
+            {
+                Id = categoryInDb.Id,
+                Name = categoryInDb.Name,
+                Type = categoryInDb.Type,
+                UserId = categoryInDb.UserId
+            };
         }
 
         /// <summary>

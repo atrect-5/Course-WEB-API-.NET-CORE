@@ -1,4 +1,5 @@
-﻿﻿using Models;
+﻿﻿using Dtos.Category;
+using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,29 +16,30 @@ namespace Services
         /// </summary>
         /// <param name="model">The category to add. Cannot be null.</param>
         /// <returns><see langword="true"/> if the category was successfully added; otherwise, <see langword="false"/>.</returns>
-        bool Add(Category model);
+        CategoryDto Add(CreateCategoryDto model);
 
         /// <param name="userId">The unique identifier of the user.</param>
         /// <param name="nameFilter">Optional. A name to filter the categories by.</param>
         /// <param name="typeFilter">Optional. The type to filter categories by (e.g., "INCOME" or "EXPENDITURE").</param>
-        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="Category"/> objects linked to the user and any global 
+        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="CategoryDto"/> objects linked to the user and any global 
         /// categories, optionally filtered by name and/or type.</returns>
-        IEnumerable<Category> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null);
+        IEnumerable<CategoryDto> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null);
 
         /// <summary>
         /// Retrieves the category associated with the specified identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the category to retrieve. Must be a positive integer.</param>
-        /// <returns>The <see cref="Category"/> object corresponding to the specified <paramref name="id"/>,  or <see
+        /// <returns>The <see cref="CategoryDto"/> object corresponding to the specified <paramref name="id"/>,  or <see
         /// langword="null"/> if no category with the given identifier exists.</returns>
-        Category? GetCategoryById(int id);
+        CategoryDto? GetCategoryById(int id);
 
         /// <summary>
         /// Updates an existing category with the provided data.
         /// </summary>
-        /// <param name="model">The category model containing updated information. Must not be null.</param>
-        /// /// <returns>The updated category object, or <see langword="null"/> if the category to update is not found.</returns>
-        Category? Update(Category model);
+        /// <param name="id">The ID of the category to update.</param>
+        /// <param name="model">The DTO containing the updated information.</param>
+        /// <returns>The updated category DTO, or <see langword="null"/> if the category to update is not found.</returns>
+        CategoryDto? Update(int id, UpdateCategoryDto model);
 
         /// <summary>
         /// Deletes the entity with the specified identifier.

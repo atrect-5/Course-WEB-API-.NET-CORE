@@ -12,7 +12,26 @@ namespace AzulSchoolProject.Controllers
     public class UserController(IUserService userService) : ControllerBase
     {
         private readonly IUserService _userService = userService;
-        
+
+        /// <summary>
+        /// Crea un nuevo usuario.
+        /// </summary>
+        /// <param name="createUserDto">El objeto con los datos para crear el nuevo usuario.</param>
+        /// <returns>El usuario recién creado.</returns>
+        /// <response code="201">Retorna el usuario recién creado y la URL para acceder a él.</response>
+        /// <response code="400">Si el objeto enviado es inválido.</response>
+        [HttpPost]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+        public IActionResult CreateUser([FromBody] CreateUserDto createUserDto)
+        {
+            var newUser = _userService.Add(createUserDto);
+
+            // Return status 201 Created.
+            // This includes the URI of the newly created resource in the Location header
+            // Also includes the created user in the response body
+            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
+        }
+
         /// <summary>
         /// Obtiene un usuario específico por su ID.
         /// </summary>
@@ -42,25 +61,6 @@ namespace AzulSchoolProject.Controllers
         {
             var users = _userService.GetAllUsers();
             return Ok(users); // Return 200 OK with the list of users
-        }
-
-        /// <summary>
-        /// Crea un nuevo usuario.
-        /// </summary>
-        /// <param name="createUserDto">El objeto con los datos para crear el nuevo usuario.</param>
-        /// <returns>El usuario recién creado.</returns>
-        /// <response code="201">Retorna el usuario recién creado y la URL para acceder a él.</response>
-        /// <response code="400">Si el objeto enviado es inválido.</response>
-        [HttpPost]
-        [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
-        public IActionResult CreateUser([FromBody] CreateUserDto createUserDto)
-        {
-            var newUser = _userService.Add(createUserDto);
-
-            // Return status 201 Created.
-            // This includes the URI of the newly created resource in the Location header
-            // Also includes the created user in the response body
-            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
         }
 
         /// <summary>
