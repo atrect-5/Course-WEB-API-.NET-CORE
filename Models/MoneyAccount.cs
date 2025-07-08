@@ -33,6 +33,9 @@ namespace Models
         /// <summary>
         /// Current balance of the account.
         /// </summary>
+        /// <remarks>
+        /// If the accountType is credit, the balance is debt, otherwise it is positive balance.
+        /// </remarks>
         public decimal Balance { get; set; }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using Data;
+using Dtos.MoneyAccount;
 using Models;
 using Services;
 using System;
@@ -12,18 +13,26 @@ namespace Repositories
     public class MoneyAccountRepository(ProjectDBContext context) : IMoneyAccountService
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
-        public bool Add(MoneyAccount model)
+        public MoneyAccountDto Add(CreateMoneyAccountDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            _ = _dbContext.Users.Find(model.UserId) 
+            _ = _dbContext.Users.Find(model.UserId)
                 ?? throw new ArgumentException($"No se encontró un usuario con el ID {model.UserId}.", nameof(model));
-            
-            ValidateAndPrepareAccount(model);
-            
-            _dbContext.MoneyAccounts.Add(model);
+
+            var moneyAccount = new MoneyAccount
+            {
+                Name = model.Name,
+                AccountType = model.AccountType,
+                Balance = model.Balance,
+                CreditLimit = model.CreditLimit,
+                UserId = model.UserId
+            };
+            ValidateAndPrepareAccount(moneyAccount);
+
+            _dbContext.MoneyAccounts.Add(moneyAccount);
             _dbContext.SaveChanges();
 
-            return true;
+            return MapToDto(moneyAccount);
         }
 
         public bool Delete(int id)
@@ -39,10 +48,16 @@ namespace Repositories
             return true;
         }
 
-        public MoneyAccount? GetMoneyAccountById(int id) => 
-            _dbContext.MoneyAccounts.Find(id);
+        public MoneyAccountDto? GetMoneyAccountById(int id)
+        {
+            var account = _dbContext.MoneyAccounts.Find(id);
+            if (account is null)
+                return null;
+            
+            return MapToDto(account);
+        }
 
-        public IEnumerable<MoneyAccount> GetMoneyAccountsByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
+        public IEnumerable<MoneyAccountDto> GetMoneyAccountsByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
         {
             var query = _dbContext.MoneyAccounts.Where(ma => ma.UserId == userId);
 
@@ -58,28 +73,26 @@ namespace Repositories
                 query = query.Where(ma => ma.AccountType.ToLower().Equals(typeFilter.ToLower()));
             }
 
-            return query.ToList();
+            return query.Select(ma => MapToDto(ma)).ToList();
         }
 
-        public MoneyAccount? Update(MoneyAccount model)
+        public MoneyAccountDto? Update(int id, UpdateMoneyAccountDto  model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            
-            ValidateAndPrepareAccount(model);
-            
-            var accountInDb = _dbContext.MoneyAccounts.Find(model.Id);
+
+            var accountInDb = _dbContext.MoneyAccounts.Find(id);
             if (accountInDb is null)
             {
-                return null; // El controlador manejará esto como un 404 Not Found.
+                return null; 
             }
 
             accountInDb.Name = model.Name;
             accountInDb.AccountType = model.AccountType;
-            accountInDb.Balance = model.Balance;
             accountInDb.CreditLimit = model.CreditLimit;
 
+            ValidateAndPrepareAccount(accountInDb);
             _dbContext.SaveChanges();
-            return accountInDb;
+            return MapToDto(accountInDb);
         }
 
         /// <summary>
@@ -106,6 +119,25 @@ namespace Repositories
             {
                 throw new ArgumentException("El límite de crédito no puede ser nulo para cuentas de tipo 'CREDIT'.", nameof(model));
             }
+        }
+        
+        /// <summary>
+        /// Maps a <see cref="MoneyAccount"/> instance to a <see cref="MoneyAccountDto"/> instance.
+        /// </summary>
+        /// <param name="account">The <see cref="MoneyAccount"/> object to map. Must not be <see langword="null"/>.</param>
+        /// <returns>A <see cref="MoneyAccountDto"/> object containing the mapped data from the specified <see
+        /// cref="MoneyAccount"/>.</returns>
+        private static MoneyAccountDto MapToDto(MoneyAccount account)
+        {
+            return new MoneyAccountDto
+            {
+                Id = account.Id,
+                Name = account.Name,
+                AccountType = account.AccountType,
+                Balance = account.Balance,
+                CreditLimit = account.CreditLimit,
+                UserId = account.UserId
+            };
         }
     }
 }
