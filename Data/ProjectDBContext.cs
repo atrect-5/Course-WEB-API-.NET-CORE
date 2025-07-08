@@ -13,61 +13,59 @@ namespace Data
         public ProjectDBContext(DbContextOptions<ProjectDBContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<User>().ToTable("User");
-            modelBuilder.Entity<User>()
-                .Property(f => f.Id)
-                .ValueGeneratedOnAdd();
-            modelBuilder.Entity<User>()
-                .HasIndex(f => f.Email)
-                .IsUnique();
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("User");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.HasIndex(e => e.Email).IsUnique();
+            });
 
-            modelBuilder.Entity<Category>().ToTable("Category");
-            modelBuilder.Entity<Category>()
-                .Property(f => f.Id)
-                .ValueGeneratedOnAdd();
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.ToTable("Category");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
 
-            modelBuilder.Entity<MoneyAccount>().ToTable("MoneyAccount");
-            modelBuilder.Entity<MoneyAccount>()
-                .Property(f => f.Id)
-                .ValueGeneratedOnAdd();
+            modelBuilder.Entity<MoneyAccount>(entity =>
+            {
+                entity.ToTable("MoneyAccount");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            });
 
-            modelBuilder.Entity<Transaction>().ToTable("Transaction");
-            modelBuilder.Entity<Transaction>()
-                .Property(f => f.Id)
-                .ValueGeneratedOnAdd();
+            modelBuilder.Entity<Transaction>(entity =>
+            {
+                entity.ToTable("Transaction");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-            // Si se intenta eliminar una Categoría que tiene Transacciones, la operación se bloqueará.
-            // Esto previene que queden transacciones huérfanas y soluciona un posible ciclo de cascada.
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.Category)
-                .WithMany(c => c.Transactions)
-                .HasForeignKey(t => t.CategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
+                // Previene que se elimine una Categoría si tiene transacciones.
+                entity.HasOne(t => t.Category)
+                    .WithMany(c => c.Transactions)
+                    .HasForeignKey(t => t.CategoryId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            // No se puede eliminar una Cuenta de Dinero si tiene Transacciones asociadas.
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.MoneyAccount)
-                .WithMany(ma => ma.Transactions)
-                .HasForeignKey(t => t.MoneyAccountId)
-                .OnDelete(DeleteBehavior.Restrict);
+                // Previene que se elimine una Cuenta de Dinero si tiene transacciones.
+                entity.HasOne(t => t.MoneyAccount)
+                    .WithMany(ma => ma.Transactions)
+                    .HasForeignKey(t => t.MoneyAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
-            modelBuilder.Entity<Transfer>().ToTable("Transfer");
-            modelBuilder.Entity<Transfer>()
-                .Property(f => f.Id)
-                .ValueGeneratedOnAdd();
+            modelBuilder.Entity<Transfer>(entity =>
+            {
+                entity.ToTable("Transfer");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-            modelBuilder.Entity<Transfer>()
-                .HasOne(t => t.MoneyAccountSend)
-                .WithMany(ma => ma.TransfersSent)
-                .HasForeignKey(t => t.MoneyAccountSendId)
-                .OnDelete(DeleteBehavior.Restrict); // evita conflictos de eliminación
+                // Previene que se elimine una Cuenta de Dinero si está involucrada en una transferencia.
+                entity.HasOne(t => t.MoneyAccountSend)
+                    .WithMany(ma => ma.TransfersSent)
+                    .HasForeignKey(t => t.MoneyAccountSendId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Transfer>()
-                .HasOne(t => t.MoneyAccountReceive)
-                .WithMany(ma => ma.TransfersReceived)
-                .HasForeignKey(t => t.MoneyAccountReceiveId)
-                .OnDelete(DeleteBehavior.Restrict);
-
+                entity.HasOne(t => t.MoneyAccountReceive)
+                    .WithMany(ma => ma.TransfersReceived)
+                    .HasForeignKey(t => t.MoneyAccountReceiveId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             base.OnModelCreating(modelBuilder);
         }
