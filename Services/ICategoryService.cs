@@ -15,7 +15,7 @@ namespace Services
         /// Adds a new category to the collection.
         /// </summary>
         /// <param name="model">The category to add. Cannot be null.</param>
-        /// <returns><see langword="true"/> if the category was successfully added; otherwise, <see langword="false"/>.</returns>
+        /// <returns>A <see cref="CategoryDto"/> representing the newly created category.</returns>
         CategoryDto Add(CreateCategoryDto model);
 
         /// <param name="userId">The unique identifier of the user.</param>
