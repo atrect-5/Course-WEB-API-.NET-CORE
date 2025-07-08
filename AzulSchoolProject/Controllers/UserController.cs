@@ -20,8 +20,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna el usuario solicitado.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public IActionResult GetUserById(int id)
         {
             var user = _userService.GetUserById(id);
@@ -37,7 +36,7 @@ namespace AzulSchoolProject.Controllers
         /// <returns>Una lista de usuarios.</returns>
         /// <response code="200">Retorna la lista de todos los usuarios.</response>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<User>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public IActionResult GetAllUsers()
         {
             var users = _userService.GetAllUsers();
@@ -52,8 +51,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="201">Retorna el usuario recién creado y la URL para acceder a él.</response>
         /// <response code="400">Si el objeto enviado es inválido.</response>
         [HttpPost]
-        [ProducesResponseType(typeof(User), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
         public IActionResult CreateUser([FromBody] CreateUserDto createUserDto)
         {
             var newUser = _userService.Add(createUserDto);
@@ -73,8 +71,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna el usuario con los datos actualizados.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public IActionResult UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
         {
             var updatedUser = _userService.Update(id, updateUserDto);
@@ -93,7 +90,6 @@ namespace AzulSchoolProject.Controllers
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult DeleteUser(int id) 
         {
             bool isDeleted = _userService.Delete(id);
