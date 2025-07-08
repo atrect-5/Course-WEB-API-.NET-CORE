@@ -24,7 +24,7 @@ namespace Models
         /// <summary>
         /// Date of the transaction.
         /// </summary>
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
 
         /// <summary>
         /// Description of the transaction.
