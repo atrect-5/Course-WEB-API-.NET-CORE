@@ -36,6 +36,21 @@ namespace Data
                 .Property(f => f.Id)
                 .ValueGeneratedOnAdd();
 
+            // Si se intenta eliminar una Categoría que tiene Transacciones, la operación se bloqueará.
+            // Esto previene que queden transacciones huérfanas y soluciona un posible ciclo de cascada.
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Category)
+                .WithMany(c => c.Transactions)
+                .HasForeignKey(t => t.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // No se puede eliminar una Cuenta de Dinero si tiene Transacciones asociadas.
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.MoneyAccount)
+                .WithMany(ma => ma.Transactions)
+                .HasForeignKey(t => t.MoneyAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Transfer>().ToTable("Transfer");
             modelBuilder.Entity<Transfer>()
                 .Property(f => f.Id)
