@@ -1,9 +1,10 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Dtos.MoneyAccount;
+﻿using Dtos.MoneyAccount;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using Services;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection.Metadata.Ecma335;
 
 namespace AzulSchoolProject.Controllers
 {
@@ -58,7 +59,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de cuentas.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<MoneyAccountDto>), StatusCodes.Status200OK)]
-        public IActionResult GetMoneyAccountsByUserId([FromQuery] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null) =>
+        public IActionResult GetMoneyAccountsByUserId([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null) =>
             Ok(_moneyAccountService.GetMoneyAccountsByUserId(userId, nameFilter, typeFilter));
 
         /// <summary>

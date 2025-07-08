@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace AzulSchoolProject.Controllers
 {
@@ -57,7 +58,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de categorías.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
-        public IActionResult GetCategoriesByUserId([FromQuery] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null)
+        public IActionResult GetCategoriesByUserId([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null)
         {
             var categories = _categoryService.GetCategoriesByUserId(userId, nameFilter, typeFilter);
             return Ok(categories); // Return 200 OK with the list of categories
