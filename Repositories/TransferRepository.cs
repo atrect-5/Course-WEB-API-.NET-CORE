@@ -1,4 +1,4 @@
-﻿using Data;
+﻿﻿using Data;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Services;
@@ -27,12 +27,22 @@ namespace Repositories
             var receivingAccount = _dbContext.MoneyAccounts.Find(model.MoneyAccountReceiveId)
                 ?? throw new ArgumentException($"La cuenta de destino con ID {model.MoneyAccountReceiveId} no existe.", nameof(model));
 
-            if (sendingAccount.Balance < model.Amount)
+            if (sendingAccount.AccountType != "CREDIT" && sendingAccount.Balance < model.Amount)
                 throw new InvalidOperationException("La cuenta de origen no tiene fondos suficientes para realizar la transferencia.");
 
-            // Aplicar cambios de saldo
-            sendingAccount.Balance -= model.Amount;
-            receivingAccount.Balance += model.Amount;
+            // Aplicar cambios de saldo, considerando el tipo de cuenta
+            // Si se envía desde una cuenta de crédito, la deuda (balance) aumenta.
+            // Si se envía desde otra cuenta, el saldo disminuye.
+            sendingAccount.Balance += sendingAccount.AccountType == "CREDIT" ? model.Amount : -model.Amount;
+
+            // Si se recibe en una cuenta de crédito, es un pago, la deuda (balance) disminuye.
+            // Si se recibe en otra cuenta, el saldo aumenta.
+            receivingAccount.Balance += receivingAccount.AccountType == "CREDIT" ? -model.Amount : model.Amount;
+
+            // Validar que el límite de crédito no se exceda
+            if (sendingAccount.AccountType == "CREDIT" && sendingAccount.Balance > sendingAccount.CreditLimit)
+                throw new InvalidOperationException("La transferencia excede el límite de crédito de la cuenta de origen.");
+
 
             // Crear las dos transacciones asociadas
             var expenditureTransaction = CreateAssociatedTransaction(model, TransferSentCategoryId, model.MoneyAccountSendId);
@@ -56,12 +66,18 @@ namespace Repositories
             if (transfer is null)
                 return false;
 
-            // Revertir cambios de saldo
+            // Revertir cambios de saldo 
             var sendingAccount = _dbContext.MoneyAccounts.Find(transfer.MoneyAccountSendId);
             var receivingAccount = _dbContext.MoneyAccounts.Find(transfer.MoneyAccountReceiveId);
 
-            if (sendingAccount is not null) sendingAccount.Balance += transfer.Amount;
-            if (receivingAccount is not null) receivingAccount.Balance -= transfer.Amount;
+            if (sendingAccount is not null)
+            {
+                sendingAccount.Balance += sendingAccount.AccountType == "CREDIT" ? -transfer.Amount : transfer.Amount;
+            }
+            if (receivingAccount is not null)
+            {
+                receivingAccount.Balance += receivingAccount.AccountType == "CREDIT" ? transfer.Amount : -transfer.Amount;
+            }
 
             // Eliminar las transacciones asociadas y la transferencia
             _dbContext.Transactions.RemoveRange(transfer.Transactions);

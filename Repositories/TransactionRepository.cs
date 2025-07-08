@@ -1,4 +1,4 @@
-﻿using Data;
+﻿﻿using Data;
 using Models;
 using Services;
 using System;
@@ -113,8 +113,20 @@ namespace Repositories
         /// </summary>
         private static void ApplyTransactionBalanceChange(MoneyAccount account, Category category, decimal amount)
         {
-            if (category.Type == "INCOME") account.Balance += amount;
-            else account.Balance -= amount; // Assumes EXPENDITURE
+            bool isCreditAccount = account.AccountType == "CREDIT";
+
+            if (category.Type == "INCOME")
+            {
+                // Un ingreso en una cuenta de crédito reduce la deuda (el balance).
+                // En cualquier otra cuenta, aumenta el saldo.
+                account.Balance += isCreditAccount ? -amount : amount;
+            }
+            else
+            {
+                // Un gasto en una cuenta de crédito aumenta la deuda (el balance).
+                // En cualquier otra cuenta, reduce el saldo.
+                account.Balance += isCreditAccount ? amount : -amount;
+            }
         }
 
         /// <summary>
@@ -124,8 +136,20 @@ namespace Repositories
         {
             if (account is not null && category is not null)
             {
-                if (category.Type == "INCOME") account.Balance -= amount;
-                else account.Balance += amount; // Assumes EXPENDITURE
+                bool isCreditAccount = account.AccountType == "CREDIT";
+
+                if (category.Type == "INCOME")
+                {
+                    // Revertir un ingreso en una cuenta de crédito aumenta la deuda (el balance).
+                    // En cualquier otra cuenta, reduce el saldo.
+                    account.Balance += isCreditAccount ? amount : -amount;
+                }
+                else
+                {
+                    // Revertir un gasto en una cuenta de crédito reduce la deuda (el balance).
+                    // En cualquier otra cuenta, aumenta el saldo.
+                    account.Balance += isCreditAccount ? -amount : amount;
+                }
             }
         }
 
