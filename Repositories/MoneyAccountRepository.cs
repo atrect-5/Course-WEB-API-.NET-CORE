@@ -49,13 +49,13 @@ namespace Repositories
             // Si se proporciona un filtro de nombre, lo aplicamos a la consulta.
             if (!string.IsNullOrWhiteSpace(nameFilter))
             {
-                query = query.Where(ma => ma.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(ma => ma.Name.ToLower().Contains(nameFilter.ToLower()));
             }
 
             // Si se proporciona un filtro de tipo, lo aplicamos también.
             if (!string.IsNullOrWhiteSpace(typeFilter))
             {
-                query = query.Where(ma => ma.AccountType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(ma => ma.AccountType.ToLower().Equals(typeFilter.ToLower()));
             }
 
             return query.ToList();

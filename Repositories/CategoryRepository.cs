@@ -45,13 +45,13 @@ namespace Repositories
             if (!string.IsNullOrWhiteSpace(nameFilter))
             {
                 // Usamos la sobrecarga con StringComparison para una búsqueda eficiente y no sensible a mayúsculas/minúsculas.
-                query = query.Where(c => c.Name.Contains(nameFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Name.ToLower().Contains(nameFilter.ToLower()));
             }
 
             // Si se proporciona un filtro de tipo, lo aplicamos también.
             if (!string.IsNullOrWhiteSpace(typeFilter))
             {
-                query = query.Where(c => c.Type.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Type.ToLower().Equals(typeFilter.ToLower()));
             }
 
             return query.ToList();

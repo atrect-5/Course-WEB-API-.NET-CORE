@@ -16,6 +16,8 @@ namespace AzulSchoolProject.Middleware
             }
             catch (Exception ex)
             {
+
+                _logger.LogError("Exception type: {ExceptionType}", ex.GetType().FullName);
                 _logger.LogError(ex, "An unhandled exception has occurred: {Message}", ex.Message);
                 await HandleExceptionAsync(context, ex);
             }
@@ -35,6 +37,11 @@ namespace AzulSchoolProject.Middleware
                 case ArgumentException argEx:
                     statusCode = HttpStatusCode.BadRequest; // 400
                     message = argEx.Message;
+                    break;
+                case InvalidOperationException opEx when opEx.Message.Contains("could not be translated"):
+                    // Captura errores de traducción de LINQ para evitar exponer detalles internos.
+                    statusCode = HttpStatusCode.BadRequest; // 400
+                    message = "La consulta no se pudo procesar. Por favor, revise los filtros aplicados.";
                     break;
                 case InvalidOperationException opEx:
                     statusCode = HttpStatusCode.BadRequest; // 400
