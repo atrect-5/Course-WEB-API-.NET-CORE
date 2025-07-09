@@ -4,9 +4,6 @@ using Dtos.Transfer;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Repositories
 {
@@ -16,7 +13,7 @@ namespace Repositories
         private const string TransferReceivedCategoryName = "TRANSFER RECEIVED";
         private const string TransferSentCategoryName = "TRANSFER SENT";
 
-        public TransferDto Add(CreateTransferDto model)
+        public async Task<TransferDto> AddAsync(CreateTransferDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
             var transfer = new Transfer
@@ -32,10 +29,10 @@ namespace Repositories
             if (model.MoneyAccountSendId == model.MoneyAccountReceiveId)
                 throw new ArgumentException("La cuenta de origen y destino no pueden ser la misma.", nameof(model));
 
-            var sendingAccount = _dbContext.MoneyAccounts.Find(model.MoneyAccountSendId)
+            var sendingAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountSendId)
                 ?? throw new ArgumentException($"La cuenta de origen con ID {model.MoneyAccountSendId} no existe.", nameof(model));
 
-            var receivingAccount = _dbContext.MoneyAccounts.Find(model.MoneyAccountReceiveId)
+            var receivingAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountReceiveId)
                 ?? throw new ArgumentException($"La cuenta de destino con ID {model.MoneyAccountReceiveId} no existe.", nameof(model));
 
             if (sendingAccount.AccountType != "CREDIT" && sendingAccount.Balance < transfer.Amount)
@@ -54,35 +51,35 @@ namespace Repositories
             if (sendingAccount.AccountType == "CREDIT" && sendingAccount.Balance > sendingAccount.CreditLimit)
                 throw new InvalidOperationException("La transferencia excede el límite de crédito de la cuenta de origen.");
 
-            var receivedCategory = _dbContext.Categories.FirstOrDefault(c => c.UserId == null && c.Name.ToUpper() == TransferReceivedCategoryName)
+            var receivedCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.UserId == null && c.Name.ToUpper() == TransferReceivedCategoryName)
                 ?? throw new InvalidOperationException($"La categoría global '{TransferReceivedCategoryName}' no se encuentra en la base de datos. Asegúrate de que exista, que su tipo sea 'INCOME' y que no tenga un UserId asignado.");
-            var sentCategory = _dbContext.Categories.FirstOrDefault(c => c.UserId == null && c.Name.ToUpper() == TransferSentCategoryName)
+            var sentCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.UserId == null && c.Name.ToUpper() == TransferSentCategoryName)
                 ?? throw new InvalidOperationException($"La categoría global '{TransferSentCategoryName}' no se encuentra en la base de datos. Asegúrate de que exista, que su tipo sea 'EXPENDITURE' y que no tenga un UserId asignado.");
             // Crear las dos transacciones asociadas
             var expenditureTransaction = CreateAssociatedTransaction(transfer, sentCategory.Id, transfer.MoneyAccountSendId);
             var incomeTransaction = CreateAssociatedTransaction(transfer, receivedCategory.Id, transfer.MoneyAccountReceiveId);
 
-            _dbContext.Transfers.Add(transfer);
-            _dbContext.Transactions.Add(expenditureTransaction);
-            _dbContext.Transactions.Add(incomeTransaction);
+            await _dbContext.Transfers.AddAsync(transfer);
+            await _dbContext.Transactions.AddAsync(expenditureTransaction);
+            await _dbContext.Transactions.AddAsync(incomeTransaction);
 
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return MapToDto(transfer);
         }
 
-        public bool Delete(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
             // Incluimos las transacciones para borrarlas en cascada
-            var transfer = _dbContext.Transfers
+            var transfer = await _dbContext.Transfers
                 .Include(t => t.Transactions)
-                .FirstOrDefault(t => t.Id == id);
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (transfer is null)
                 return false;
 
             // Revertir cambios de saldo 
-            var sendingAccount = _dbContext.MoneyAccounts.Find(transfer.MoneyAccountSendId);
-            var receivingAccount = _dbContext.MoneyAccounts.Find(transfer.MoneyAccountReceiveId);
+            var sendingAccount = await _dbContext.MoneyAccounts.FindAsync(transfer.MoneyAccountSendId);
+            var receivingAccount = await _dbContext.MoneyAccounts.FindAsync(transfer.MoneyAccountReceiveId);
 
             if (sendingAccount is not null)
                 sendingAccount.Balance += sendingAccount.AccountType == "CREDIT" ? -transfer.Amount : transfer.Amount;
@@ -95,21 +92,21 @@ namespace Repositories
             _dbContext.Transactions.RemoveRange(transfer.Transactions);
             _dbContext.Transfers.Remove(transfer);
 
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public TransferDto? GetTransferById(int id)
+        public async Task<TransferDto?> GetTransferByIdAsync(int id)
         {
-            var transfer = _dbContext.Transfers
+            var transfer = await _dbContext.Transfers
                 .Include(t => t.Transactions)
-                .FirstOrDefault(t => t.Id == id);
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (transfer is null) return null;
             return MapToDto(transfer);
         }
 
-        public IEnumerable<TransferDto> GetTransfersByUserId(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IEnumerable<TransferDto>> GetTransfersByUserIdAsync(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _dbContext.Transfers.Where(t => t.UserId == userId);
 
@@ -120,10 +117,10 @@ namespace Repositories
             if (endDate.HasValue)
                 query = query.Where(t => t.Date <= endDate.Value);
 
-             return query.Include(t => t.Transactions)
+             return await query.Include(t => t.Transactions)
                         .OrderByDescending(t => t.Date)
                         .Select(t => MapToDto(t))
-                        .ToList();
+                        .ToListAsync();
         }
 
         /// <summary>

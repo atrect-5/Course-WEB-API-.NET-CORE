@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Dtos.Transfer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Services;
 
@@ -22,10 +21,10 @@ namespace AzulSchoolProject.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(TransferDto), StatusCodes.Status201Created)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult AddTransfer([FromBody] CreateTransferDto model)
+        public async Task<IActionResult> AddTransferAsync([FromBody] CreateTransferDto model)
         {
-            var newTransfer = _transferService.Add(model);
-            return CreatedAtAction(nameof(GetTransferById), new { id = newTransfer.Id }, newTransfer);
+            var newTransfer = await _transferService.AddAsync(model);
+            return CreatedAtAction(nameof(GetTransferByIdAsync), new { id = newTransfer.Id }, newTransfer);
         }
 
         /// <summary>
@@ -38,9 +37,9 @@ namespace AzulSchoolProject.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(TransferDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetTransferById(int id)
+        public async Task<IActionResult> GetTransferByIdAsync(int id)
         {
-            var transfer = _transferService.GetTransferById(id);
+            var transfer = await _transferService.GetTransferByIdAsync(id);
             if (transfer is null)
                 return NotFound();
             return Ok(transfer);
@@ -57,9 +56,9 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de transferencias.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<TransferDto>), StatusCodes.Status200OK)]
-        public IActionResult GetTransfersByUserId(
+        public async Task<IActionResult> GetTransfersByUserIdAsync(
             [FromQuery] [Required] int userId, [FromQuery] int? moneyAccountId = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null) =>
-            Ok(_transferService.GetTransfersByUserId(
+            Ok(await _transferService.GetTransfersByUserIdAsync(
                 userId, moneyAccountId, startDate, endDate));
 
         /// <summary>
@@ -72,9 +71,9 @@ namespace AzulSchoolProject.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult DeleteTransfer(int id)
+        public async Task<IActionResult> DeleteTransferAsync(int id)
         {
-            if (_transferService.Delete(id))
+            if (await _transferService.DeleteAsync(id))
                 return NoContent();
             return NotFound();
         }

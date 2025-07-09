@@ -1,10 +1,4 @@
 ﻿using Dtos.Transfer;
-using Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Services
 {
@@ -15,14 +9,14 @@ namespace Services
         /// </summary>
         /// <param name="model">The DTO for creating the transfer. Must not be <see langword="null"/>.</param>
         /// <returns>A <see cref="TransferDto"/> representing the newly created transfer.</returns>
-        TransferDto Add(CreateTransferDto model);
+        Task<TransferDto> AddAsync(CreateTransferDto model);
 
         /// <summary>
         /// Retrieves a Transfer by its unique identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the Transfer to retrieve. Must be a positive integer.</param>
         /// <returns>The <see cref="TransferDto"/> object corresponding to the specified identifier, or <see langword="null"/> if no Transfer with the given identifier exists.</returns>
-        TransferDto? GetTransferById(int id);
+        Task<TransferDto?> GetTransferByIdAsync(int id);
 
         /// <summary>
         /// Retrieves a collection of transfers associated with a specific user.
@@ -39,13 +33,13 @@ namespace Services
         /// this date will be included.</param>
         /// <returns>A collection of <see cref="TransferDto"/> objects representing the user's transfers.  The collection will be
         /// empty if no transfers match the specified criteria.</returns>
-        IEnumerable<TransferDto> GetTransfersByUserId(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<IEnumerable<TransferDto>> GetTransfersByUserIdAsync(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// Deletes the specified Transfer from the system.
         /// </summary>
         /// <param name="id">The unique identifier of the Transfer to delete. Must be a positive integer.</param>
         /// <returns><see langword="true"/> if the Transfer was successfully deleted; otherwise, <see langword="false"/>.</returns>
-        bool Delete(int id);
+        Task<bool> DeleteAsync(int id);
     }
 }
