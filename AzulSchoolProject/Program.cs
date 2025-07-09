@@ -43,6 +43,25 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+// Ruta principal para mostrar un mensaje de bienvenida en HTML con un enlace a Swagger.
+app.MapGet("/", () => Results.Content("""
+    <html>
+        <head>
+            <title>Azul School Project API</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; flex-direction: column; background-color: #f8f9fa; color: #343a40; }
+                h1 { font-weight: 300; }
+                a { color: #007bff; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <h1>Welcome to the app</h1>
+            <p>Go to the <a href="/swagger">API Documentation</a>.</p>
+        </body>
+    </html>
+    """, "text/html")).ExcludeFromDescription();
+
 app.MapControllers();
 
 app.Run();
