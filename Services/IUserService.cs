@@ -17,7 +17,7 @@ namespace Services
         /// </summary>
         /// <param name="model">The data transfer object containing the details of the user to be created. Cannot be null.</param>
         /// <returns>A <see cref="UserDto"/> representing the newly created user.</returns>
-        UserDto Add(CreateUserDto model);
+        Task<UserDto> AddAsync(CreateUserDto model);
 
         /// <summary>
         /// Retrieves a Collection of all users.
@@ -26,7 +26,7 @@ namespace Services
         /// single operation.</remarks>
         /// <returns>A Collection of <see cref="UserDto"/> objects representing all users.  Returns an empty Collection if no users are
         /// available.</returns>
-        IEnumerable<UserDto> GetAllUsers();
+        Task<IEnumerable<UserDto>> GetAllUsersAsync();
 
         /// <summary>
         /// Retrieves a user by their unique identifier.
@@ -34,7 +34,7 @@ namespace Services
         /// <param name="id">The unique identifier of the user to retrieve. Must be a positive integer.</param>
         /// <returns>A <see cref="UserDto"/> object representing the user with the specified identifier,  or <see
         /// langword="null"/> if no user with the given identifier exists.</returns>
-        UserDto? GetUserById(int id);
+        Task<UserDto?> GetUserByIdAsync(int id);
         
         /// <summary>
         /// Updates an existing user with the specified ID using the provided data.
@@ -43,13 +43,13 @@ namespace Services
         /// <param name="model">The data transfer object with the fields to update. All fields are optional.</param>
         /// <returns>A <see cref="UserDto"/> representing the updated user, or <see langword="null"/> if no user with the
         /// specified ID exists.</returns>
-        UserDto? Update(int id, UpdateUserDto model);
+        Task<UserDto?> UpdateAsync(int id, UpdateUserDto model);
 
         /// <summary>
         /// Deletes the entity with the specified identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the entity to delete. Must be a positive integer.</param>
         /// <returns><see langword="true"/> if the entity was successfully deleted; otherwise, <see langword="false"/>.</returns>
-        bool Delete(int id);
+        Task<bool> DeleteAsync(int id);
     }
 }

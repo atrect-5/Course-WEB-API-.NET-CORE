@@ -1,8 +1,6 @@
 ﻿using Dtos;
 using Dtos.User;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Models;
 using Services;
 
 namespace AzulSchoolProject.Controllers
@@ -22,14 +20,14 @@ namespace AzulSchoolProject.Controllers
         /// <response code="400">Si el objeto enviado es inválido.</response>
         [HttpPost]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
-        public IActionResult CreateUser([FromBody] CreateUserDto createUserDto)
+        public async Task<IActionResult> CreateUserAsync([FromBody] CreateUserDto createUserDto)
         {
-            var newUser = _userService.Add(createUserDto);
+            var newUser = await _userService.AddAsync(createUserDto);
 
             // Return status 201 Created.
             // This includes the URI of the newly created resource in the Location header
             // Also includes the created user in the response body
-            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
+            return CreatedAtAction(nameof(GetUserByIdAsync), new { id = newUser.Id }, newUser);
         }
 
         /// <summary>
@@ -41,9 +39,9 @@ namespace AzulSchoolProject.Controllers
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-        public IActionResult GetUserById(int id)
+        public async Task<IActionResult> GetUserByIdAsync(int id)
         {
-            var user = _userService.GetUserById(id);
+            var user = await _userService.GetUserByIdAsync(id);
             if (user is null)
                 return NotFound(); // Return 404 Not Found if the user does not exist
 
@@ -57,9 +55,9 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de todos los usuarios.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
-        public IActionResult GetAllUsers()
+        public async Task<IActionResult> GetAllUsersAsync()
         {
-            var users = _userService.GetAllUsers();
+            var users = await _userService.GetAllUsersAsync();
             return Ok(users); // Return 200 OK with the list of users
         }
 
@@ -73,9 +71,9 @@ namespace AzulSchoolProject.Controllers
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-        public IActionResult UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
+        public async Task<IActionResult> UpdateUserAsync(int id, [FromBody] UpdateUserDto updateUserDto)
         {
-            var updatedUser = _userService.Update(id, updateUserDto);
+            var updatedUser = await _userService.UpdateAsync(id, updateUserDto);
             if (updatedUser is null)
                 return NotFound();
 
@@ -91,9 +89,9 @@ namespace AzulSchoolProject.Controllers
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public IActionResult DeleteUser(int id) 
+        public async Task<IActionResult> DeleteUserAsync(int id) 
         {
-            bool isDeleted = _userService.Delete(id);
+            bool isDeleted = await _userService.DeleteAsync(id);
             if (!isDeleted)
                 return NotFound();
             return NoContent(); // 204 No Content
