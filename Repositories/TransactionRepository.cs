@@ -1,19 +1,16 @@
 ﻿﻿using Data;
 using Dtos.Transaction;
+using Microsoft.EntityFrameworkCore;
 using Models;
 using Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Repositories
 {
     public class TransactionRepository(ProjectDBContext context) : ITransactionService
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
-        public TransactionDto Add(CreateTransactionDto model)
+
+        public async Task<TransactionDto> AddAsync(CreateTransactionDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
             var transaction = new Transaction
@@ -27,54 +24,52 @@ namespace Repositories
             };
 
             // Validamos que las entidades relacionadas existan.
-            var account = _dbContext.MoneyAccounts.Find(model.MoneyAccountId)
+            var account = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountId)
                 ?? throw new ArgumentException($"La cuenta con ID {model.MoneyAccountId} no existe.", nameof(model));
-            var category = _dbContext.Categories.Find(model.CategoryId)
+            var category = await _dbContext.Categories.FindAsync(model.CategoryId)
                 ?? throw new ArgumentException($"La categoría con ID {model.CategoryId} no existe.", nameof(model));
 
             ApplyTransactionBalanceChange(account, category, transaction.Amount);
 
             transaction.Date ??= DateTime.Now;
 
-            _dbContext.Transactions.Add(transaction);
-            _dbContext.SaveChanges();
+            await _dbContext.Transactions.AddAsync(transaction);
+            await _dbContext.SaveChangesAsync();
 
             return MapToDto(transaction);
         }
 
-        public bool Delete(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            var transaction = _dbContext.Transactions.Find(id);
+            var transaction = await _dbContext.Transactions.FindAsync(id);
             if (transaction is null)
                 return false;
 
             PreventDirectModificationOfTransferTransaction(transaction);
 
-            var account = _dbContext.MoneyAccounts.Find(transaction.MoneyAccountId);
-            var category = _dbContext.Categories.Find(transaction.CategoryId);
+            var account = await _dbContext.MoneyAccounts.FindAsync(transaction.MoneyAccountId);
+            var category = await _dbContext.Categories.FindAsync(transaction.CategoryId);
 
             RevertTransactionBalanceChange(account, category, transaction.Amount);
 
             _dbContext.Transactions.Remove(transaction);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public TransactionDto? GetTransactionById(int id)
+        public async Task<TransactionDto?> GetTransactionByIdAsync(int id)
         {
-            var transaction = _dbContext.Transactions.Find(id);
+            var transaction = await _dbContext.Transactions.FindAsync(id);
             if (transaction is null) return null;
             return MapToDto(transaction);
         }
 
-        public IEnumerable<TransactionDto> GetTransactionsByUserId(
+        public async Task<IEnumerable<TransactionDto>> GetTransactionsByUserIdAsync(
             int userId, int? moneyAccountId = null, int? categoryId = null,
             DateTime? startDate = null, DateTime? endDate = null)
         {
-            // Empezamos filtrando por el usuario.
             var query = _dbContext.Transactions.Where(t => t.UserId == userId);
 
-            // Aplicamos los filtros opcionales de forma condicional.
             if (moneyAccountId.HasValue)
                 query = query.Where(t => t.MoneyAccountId == moneyAccountId.Value);
             if (categoryId.HasValue)
@@ -84,28 +79,29 @@ namespace Repositories
             if (endDate.HasValue)
                 query = query.Where(t => t.Date <= endDate.Value);
 
-            return query.OrderByDescending(t => t.Date).Select(t => MapToDto(t)).ToList();
+            var result = await query.OrderByDescending(t => t.Date).Select(t => MapToDto(t)).ToListAsync();
+            return result;
         }
 
-        public TransactionDto? Update(int id, UpdateTransactionDto model)
+        public async Task<TransactionDto?> UpdateAsync(int id, UpdateTransactionDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
 
-            var transactionInDb = _dbContext.Transactions.Find(id);
+            var transactionInDb = await _dbContext.Transactions.FindAsync(id);
             if (transactionInDb is null)
                 return null;
 
             PreventDirectModificationOfTransferTransaction(transactionInDb);
 
             // Revertir el impacto de la transacción original en el saldo
-            var originalAccount = _dbContext.MoneyAccounts.Find(transactionInDb.MoneyAccountId);
-            var originalCategory = _dbContext.Categories.Find(transactionInDb.CategoryId);
+            var originalAccount = await _dbContext.MoneyAccounts.FindAsync(transactionInDb.MoneyAccountId);
+            var originalCategory = await _dbContext.Categories.FindAsync(transactionInDb.CategoryId);
             RevertTransactionBalanceChange(originalAccount, originalCategory, transactionInDb.Amount);
 
             // Aplicar el impacto de la nueva transacción en el saldo
-            var newAccount = _dbContext.MoneyAccounts.Find(model.MoneyAccountId)
+            var newAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountId)
                 ?? throw new ArgumentException($"La nueva cuenta con ID {model.MoneyAccountId} no existe.", nameof(model));
-            var newCategory = _dbContext.Categories.Find(model.CategoryId)
+            var newCategory = await _dbContext.Categories.FindAsync(model.CategoryId)
                 ?? throw new ArgumentException($"La nueva categoría con ID {model.CategoryId} no existe.", nameof(model));
             ApplyTransactionBalanceChange(newAccount, newCategory, model.Amount);
 
@@ -116,7 +112,7 @@ namespace Repositories
             transactionInDb.CategoryId = model.CategoryId;
             transactionInDb.MoneyAccountId = model.MoneyAccountId;
 
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return MapToDto(transactionInDb);
         }
 
@@ -168,7 +164,7 @@ namespace Repositories
                 throw new InvalidOperationException("Las transacciones que forman parte de una transferencia no se pueden modificar o eliminar directamente. Opere sobre la transferencia original.");
         }
         
-        // <summary>
+        /// <summary>
         /// Maps a <see cref="Transaction"/> entity to a <see cref="TransactionDto"/>.
         /// </summary>
         /// <param name="transaction">The transaction entity to map.</param>

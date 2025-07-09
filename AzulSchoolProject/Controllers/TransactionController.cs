@@ -2,8 +2,8 @@
 using Dtos.Transaction;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Models;
 using Services;
+using System.Threading.Tasks;
 
 namespace AzulSchoolProject.Controllers
 {
@@ -23,10 +23,10 @@ namespace AzulSchoolProject.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(TransactionDto), StatusCodes.Status201Created)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult AddTransaction([FromBody] CreateTransactionDto model)
+        public async Task<IActionResult> AddTransactionAsync([FromBody] CreateTransactionDto model)
         {
-            var newTransaction = _transactionService.Add(model);
-            return CreatedAtAction(nameof(GetTransactionById), new { id = newTransaction.Id }, newTransaction);
+            var newTransaction = await _transactionService.AddAsync(model);
+            return CreatedAtAction(nameof(GetTransactionByIdAsync), new { id = newTransaction.Id }, newTransaction);
         }
 
         /// <summary>
@@ -39,9 +39,9 @@ namespace AzulSchoolProject.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(TransactionDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetTransactionById(int id)
+        public async Task<IActionResult> GetTransactionByIdAsync(int id)
         {
-            var transaction = _transactionService.GetTransactionById(id);
+            var transaction = await _transactionService.GetTransactionByIdAsync(id);
             if (transaction is null)
                 return NotFound();
             return Ok(transaction);
@@ -59,10 +59,10 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de transacciones.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<TransactionDto>), StatusCodes.Status200OK)]
-        public IActionResult GetTransactionsByUserId(
+        public async Task<IActionResult> GetTransactionsByUserIdAsync(
             [FromQuery] [Required] int userId, [FromQuery] int? moneyAccountId = null, [FromQuery] int? categoryId = null,
             [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null) =>
-            Ok(_transactionService.GetTransactionsByUserId(
+            Ok(await _transactionService.GetTransactionsByUserIdAsync(
                 userId, moneyAccountId, categoryId, startDate, endDate));
 
         /// <summary>
@@ -78,9 +78,9 @@ namespace AzulSchoolProject.Controllers
         [ProducesResponseType(typeof(TransactionDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateTransaction(int id, [FromBody] UpdateTransactionDto model)
+        public async Task<IActionResult> UpdateTransactionAsync(int id, [FromBody] UpdateTransactionDto model)
         {
-            var updatedTransaction = _transactionService.Update(id, model);
+            var updatedTransaction = await _transactionService.UpdateAsync(id, model);
             if (updatedTransaction is null)
                 return NotFound();
             return Ok(updatedTransaction);
@@ -96,9 +96,9 @@ namespace AzulSchoolProject.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult DeleteTransaction(int id)
+        public async Task<IActionResult> DeleteTransactionAsync(int id)
         {
-            if (_transactionService.Delete(id))
+            if (await _transactionService.DeleteAsync(id))
                 return NoContent();
             return NotFound();
         }
