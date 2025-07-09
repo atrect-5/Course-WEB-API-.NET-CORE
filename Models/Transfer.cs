@@ -26,7 +26,7 @@ namespace Models
         /// <summary>
         /// Date of the transfer.
         /// </summary>
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
 
         /// <summary>
         /// Description of the transfer.

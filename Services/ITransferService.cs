@@ -1,4 +1,5 @@
-﻿using Models;
+﻿using Dtos.Transfer;
+using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,16 +13,16 @@ namespace Services
         /// <summary>
         /// Adds a new transfer to the system.
         /// </summary>
-        /// <param name="model">The transfer model to be added. Must not be <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the transfer was successfully added; otherwise, <see langword="false"/>.</returns>
-        bool Add(Transfer model);
+        /// <param name="model">The DTO for creating the transfer. Must not be <see langword="null"/>.</param>
+        /// <returns>A <see cref="TransferDto"/> representing the newly created transfer.</returns>
+        TransferDto Add(CreateTransferDto model);
 
         /// <summary>
         /// Retrieves a Transfer by its unique identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the Transfer to retrieve. Must be a positive integer.</param>
-        /// <returns>The <see cref="Transfer"/> object corresponding to the specified identifier, or <see langword="null"/> if no Transfer with the given identifier exists.</returns>
-        Transfer? GetTransferById(int id);
+        /// <returns>The <see cref="TransferDto"/> object corresponding to the specified identifier, or <see langword="null"/> if no Transfer with the given identifier exists.</returns>
+        TransferDto? GetTransferById(int id);
 
         /// <summary>
         /// Retrieves a collection of transfers associated with a specific user.
@@ -36,9 +37,9 @@ namespace Services
         /// this date will be included.</param>
         /// <param name="endDate">An optional parameter specifying the end date for filtering transfers.  Transfers occurring on or before
         /// this date will be included.</param>
-        /// <returns>A collection of <see cref="Transfer"/> objects representing the user's transfers.  The collection will be
+        /// <returns>A collection of <see cref="TransferDto"/> objects representing the user's transfers.  The collection will be
         /// empty if no transfers match the specified criteria.</returns>
-        IEnumerable<Transfer> GetTransfersByUserId(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null);
+        IEnumerable<TransferDto> GetTransfersByUserId(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// Deletes the specified Transfer from the system.

@@ -1,4 +1,6 @@
 ﻿﻿using Data;
+using Dtos.Transaction;
+using Dtos.Transfer;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using Services;
@@ -11,12 +13,21 @@ namespace Repositories
     public class TransferRepository(ProjectDBContext context) : ITransferService
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
-        private const int TransferReceivedCategoryId = 1;
-        private const int TransferSentCategoryId = 2;
+        private const string TransferReceivedCategoryName = "TRANSFER RECEIVED";
+        private const string TransferSentCategoryName = "TRANSFER SENT";
 
-        public bool Add(Transfer model)
+        public TransferDto Add(CreateTransferDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
+            var transfer = new Transfer
+            {
+                Amount = model.Amount,
+                Date = model.Date ?? DateTime.Now,
+                Description = model.Description,
+                UserId = model.UserId,
+                MoneyAccountSendId = model.MoneyAccountSendId,
+                MoneyAccountReceiveId = model.MoneyAccountReceiveId
+            };
 
             if (model.MoneyAccountSendId == model.MoneyAccountReceiveId)
                 throw new ArgumentException("La cuenta de origen y destino no pueden ser la misma.", nameof(model));
@@ -27,33 +38,36 @@ namespace Repositories
             var receivingAccount = _dbContext.MoneyAccounts.Find(model.MoneyAccountReceiveId)
                 ?? throw new ArgumentException($"La cuenta de destino con ID {model.MoneyAccountReceiveId} no existe.", nameof(model));
 
-            if (sendingAccount.AccountType != "CREDIT" && sendingAccount.Balance < model.Amount)
+            if (sendingAccount.AccountType != "CREDIT" && sendingAccount.Balance < transfer.Amount)
                 throw new InvalidOperationException("La cuenta de origen no tiene fondos suficientes para realizar la transferencia.");
 
             // Aplicar cambios de saldo, considerando el tipo de cuenta
             // Si se envía desde una cuenta de crédito, la deuda (balance) aumenta.
             // Si se envía desde otra cuenta, el saldo disminuye.
-            sendingAccount.Balance += sendingAccount.AccountType == "CREDIT" ? model.Amount : -model.Amount;
+            sendingAccount.Balance += sendingAccount.AccountType == "CREDIT" ? transfer.Amount : -transfer.Amount;
 
             // Si se recibe en una cuenta de crédito, es un pago, la deuda (balance) disminuye.
             // Si se recibe en otra cuenta, el saldo aumenta.
-            receivingAccount.Balance += receivingAccount.AccountType == "CREDIT" ? -model.Amount : model.Amount;
+            receivingAccount.Balance += receivingAccount.AccountType == "CREDIT" ? -transfer.Amount : transfer.Amount;
 
             // Validar que el límite de crédito no se exceda
             if (sendingAccount.AccountType == "CREDIT" && sendingAccount.Balance > sendingAccount.CreditLimit)
                 throw new InvalidOperationException("La transferencia excede el límite de crédito de la cuenta de origen.");
 
-
+            var receivedCategory = _dbContext.Categories.FirstOrDefault(c => c.UserId == null && c.Name.ToUpper() == TransferReceivedCategoryName)
+                ?? throw new InvalidOperationException($"La categoría global '{TransferReceivedCategoryName}' no se encuentra en la base de datos. Asegúrate de que exista, que su tipo sea 'INCOME' y que no tenga un UserId asignado.");
+            var sentCategory = _dbContext.Categories.FirstOrDefault(c => c.UserId == null && c.Name.ToUpper() == TransferSentCategoryName)
+                ?? throw new InvalidOperationException($"La categoría global '{TransferSentCategoryName}' no se encuentra en la base de datos. Asegúrate de que exista, que su tipo sea 'EXPENDITURE' y que no tenga un UserId asignado.");
             // Crear las dos transacciones asociadas
-            var expenditureTransaction = CreateAssociatedTransaction(model, TransferSentCategoryId, model.MoneyAccountSendId);
-            var incomeTransaction = CreateAssociatedTransaction(model, TransferReceivedCategoryId, model.MoneyAccountReceiveId);
+            var expenditureTransaction = CreateAssociatedTransaction(transfer, sentCategory.Id, transfer.MoneyAccountSendId);
+            var incomeTransaction = CreateAssociatedTransaction(transfer, receivedCategory.Id, transfer.MoneyAccountReceiveId);
 
-            _dbContext.Transfers.Add(model);
+            _dbContext.Transfers.Add(transfer);
             _dbContext.Transactions.Add(expenditureTransaction);
             _dbContext.Transactions.Add(incomeTransaction);
 
             _dbContext.SaveChanges();
-            return true;
+            return MapToDto(transfer);
         }
 
         public bool Delete(int id)
@@ -71,13 +85,11 @@ namespace Repositories
             var receivingAccount = _dbContext.MoneyAccounts.Find(transfer.MoneyAccountReceiveId);
 
             if (sendingAccount is not null)
-            {
                 sendingAccount.Balance += sendingAccount.AccountType == "CREDIT" ? -transfer.Amount : transfer.Amount;
-            }
+            
             if (receivingAccount is not null)
-            {
                 receivingAccount.Balance += receivingAccount.AccountType == "CREDIT" ? transfer.Amount : -transfer.Amount;
-            }
+            
 
             // Eliminar las transacciones asociadas y la transferencia
             _dbContext.Transactions.RemoveRange(transfer.Transactions);
@@ -87,10 +99,17 @@ namespace Repositories
             return true;
         }
 
-        public Transfer? GetTransferById(int id) =>
-            _dbContext.Transfers.Find(id);
+        public TransferDto? GetTransferById(int id)
+        {
+            var transfer = _dbContext.Transfers
+                .Include(t => t.Transactions)
+                .FirstOrDefault(t => t.Id == id);
 
-        public IEnumerable<Transfer> GetTransfersByUserId(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null)
+            if (transfer is null) return null;
+            return MapToDto(transfer);
+        }
+
+        public IEnumerable<TransferDto> GetTransfersByUserId(int userId, int? moneyAccountId = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _dbContext.Transfers.Where(t => t.UserId == userId);
 
@@ -101,7 +120,10 @@ namespace Repositories
             if (endDate.HasValue)
                 query = query.Where(t => t.Date <= endDate.Value);
 
-            return query.OrderByDescending(t => t.Date).ToList();
+             return query.Include(t => t.Transactions)
+                        .OrderByDescending(t => t.Date)
+                        .Select(t => MapToDto(t))
+                        .ToList();
         }
 
         /// <summary>
@@ -118,6 +140,36 @@ namespace Repositories
                 CategoryId = categoryId,
                 MoneyAccountId = accountId,
                 Transfer = transfer
+            };
+        }
+
+        /// <summary>
+        /// Maps a <see cref="Transfer"/> entity to a <see cref="TransferDto"/>.
+        /// </summary>
+        /// <param name="transfer">The transfer entity to map.</param>
+        /// <returns>A new <see cref="TransferDto"/> instance.</returns>
+        private static TransferDto MapToDto(Transfer transfer)
+        {
+            return new TransferDto
+            {
+                Id = transfer.Id,
+                Amount = transfer.Amount,
+                Date = transfer.Date,
+                Description = transfer.Description,
+                UserId = transfer.UserId,
+                MoneyAccountSendId = transfer.MoneyAccountSendId,
+                MoneyAccountReceiveId = transfer.MoneyAccountReceiveId,
+                Transactions = transfer.Transactions?.Select(t => new TransactionDto
+                {
+                    Id = t.Id,
+                    Amount = t.Amount,
+                    Date = t.Date,
+                    Description = t.Description,
+                    UserId = t.UserId,
+                    CategoryId = t.CategoryId,
+                    MoneyAccountId = t.MoneyAccountId,
+                    TransferId = t.TransferId
+                }).ToList() ?? new List<TransactionDto>()
             };
         }
     }
