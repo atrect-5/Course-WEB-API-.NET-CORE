@@ -30,7 +30,7 @@ namespace Repositories
                 Email = createUserDto.Email,
                 Password = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password)
             };
-            _dbContext.Users.Add(user);
+            await _dbContext.Users.AddAsync(user);
             await _dbContext.SaveChangesAsync();
             return new UserDto { Id = user.Id, Name = user.Name, Email = user.Email };
         }

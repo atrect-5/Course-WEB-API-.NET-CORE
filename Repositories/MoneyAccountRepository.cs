@@ -25,7 +25,7 @@ namespace Repositories
             };
             ValidateAndPrepareAccount(moneyAccount);
 
-            _dbContext.MoneyAccounts.Add(moneyAccount);
+            await _dbContext.MoneyAccounts.AddAsync(moneyAccount);
             await _dbContext.SaveChangesAsync();
 
             return MapToDto(moneyAccount);
