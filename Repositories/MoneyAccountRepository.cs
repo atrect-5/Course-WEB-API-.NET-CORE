@@ -1,22 +1,18 @@
 ﻿using Data;
 using Dtos.MoneyAccount;
+using Microsoft.EntityFrameworkCore;
 using Models;
 using Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Repositories
 {
     public class MoneyAccountRepository(ProjectDBContext context) : IMoneyAccountService
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
-        public MoneyAccountDto Add(CreateMoneyAccountDto model)
+        public async Task<MoneyAccountDto> AddAsync(CreateMoneyAccountDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            _ = _dbContext.Users.Find(model.UserId)
+            _ = await _dbContext.Users.FindAsync(model.UserId)
                 ?? throw new ArgumentException($"No se encontró un usuario con el ID {model.UserId}.", nameof(model));
 
             var moneyAccount = new MoneyAccount
@@ -30,68 +26,60 @@ namespace Repositories
             ValidateAndPrepareAccount(moneyAccount);
 
             _dbContext.MoneyAccounts.Add(moneyAccount);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
 
             return MapToDto(moneyAccount);
         }
 
-        public bool Delete(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            var account = _dbContext.MoneyAccounts.Find(id);
+            var account = await _dbContext.MoneyAccounts.FindAsync(id);
             if (account is null)
-            {
                 return false;
-            }
 
             _dbContext.MoneyAccounts.Remove(account);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public MoneyAccountDto? GetMoneyAccountById(int id)
+        public async Task<MoneyAccountDto?> GetMoneyAccountByIdAsync(int id)
         {
-            var account = _dbContext.MoneyAccounts.Find(id);
+            var account = await _dbContext.MoneyAccounts.FindAsync(id);
             if (account is null)
                 return null;
             
             return MapToDto(account);
         }
 
-        public IEnumerable<MoneyAccountDto> GetMoneyAccountsByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
+        public async Task<IEnumerable<MoneyAccountDto>> GetMoneyAccountsByUserIdAsync(int userId, string? nameFilter = null, string? typeFilter = null)
         {
             var query = _dbContext.MoneyAccounts.Where(ma => ma.UserId == userId);
 
             // Si se proporciona un filtro de nombre, lo aplicamos a la consulta.
             if (!string.IsNullOrWhiteSpace(nameFilter))
-            {
                 query = query.Where(ma => ma.Name.ToLower().Contains(nameFilter.ToLower()));
-            }
 
             // Si se proporciona un filtro de tipo, lo aplicamos también.
             if (!string.IsNullOrWhiteSpace(typeFilter))
-            {
                 query = query.Where(ma => ma.AccountType.ToLower().Equals(typeFilter.ToLower()));
-            }
 
-            return query.Select(ma => MapToDto(ma)).ToList();
+            return await query.Select(ma => MapToDto(ma)).ToListAsync();
         }
 
-        public MoneyAccountDto? Update(int id, UpdateMoneyAccountDto  model)
+        public async Task<MoneyAccountDto?> UpdateAsync(int id, UpdateMoneyAccountDto  model)
         {
             ArgumentNullException.ThrowIfNull(model);
 
-            var accountInDb = _dbContext.MoneyAccounts.Find(id);
+            var accountInDb = await _dbContext.MoneyAccounts.FindAsync(id);
             if (accountInDb is null)
-            {
                 return null; 
-            }
 
             accountInDb.Name = model.Name;
             accountInDb.AccountType = model.AccountType;
             accountInDb.CreditLimit = model.CreditLimit;
 
             ValidateAndPrepareAccount(accountInDb);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return MapToDto(accountInDb);
         }
 

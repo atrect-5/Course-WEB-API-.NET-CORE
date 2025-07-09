@@ -1,10 +1,7 @@
 ﻿using Dtos.MoneyAccount;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Models;
 using Services;
 using System.ComponentModel.DataAnnotations;
-using System.Reflection.Metadata.Ecma335;
 
 namespace AzulSchoolProject.Controllers
 {
@@ -24,10 +21,10 @@ namespace AzulSchoolProject.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(MoneyAccountDto), StatusCodes.Status201Created)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult CreateMoneyAccount([FromBody] CreateMoneyAccountDto model)
+        public async Task<IActionResult> CreateMoneyAccountAsync([FromBody] CreateMoneyAccountDto model)
         {
-            var newMoneyAccount = _moneyAccountService.Add(model);
-            return CreatedAtAction(nameof(GetMoneyAccountById), new { id = newMoneyAccount.Id }, newMoneyAccount );
+            var newMoneyAccount = await _moneyAccountService.AddAsync(model);
+            return CreatedAtAction(nameof(GetMoneyAccountByIdAsync), new { id = newMoneyAccount.Id }, newMoneyAccount );
         }
 
         /// <summary>
@@ -40,9 +37,9 @@ namespace AzulSchoolProject.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(MoneyAccountDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetMoneyAccountById(int id)
+        public async Task<IActionResult> GetMoneyAccountByIdAsync(int id)
         {
-            var moneyAccount = _moneyAccountService.GetMoneyAccountById(id);
+            var moneyAccount = await _moneyAccountService.GetMoneyAccountByIdAsync(id);
             if (moneyAccount is null)
                 return NotFound();
 
@@ -59,8 +56,8 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de cuentas.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<MoneyAccountDto>), StatusCodes.Status200OK)]
-        public IActionResult GetMoneyAccountsByUserId([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null) =>
-            Ok(_moneyAccountService.GetMoneyAccountsByUserId(userId, nameFilter, typeFilter));
+        public async Task<IActionResult> GetMoneyAccountsByUserIdAsync([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null) =>
+            Ok(await _moneyAccountService.GetMoneyAccountsByUserIdAsync(userId, nameFilter, typeFilter));
 
         /// <summary>
         /// Actualiza una cuenta de dinero existente.
@@ -75,9 +72,9 @@ namespace AzulSchoolProject.Controllers
         [ProducesResponseType(typeof(MoneyAccountDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateMoneyAccount(int id, [FromBody] UpdateMoneyAccountDto model)
+        public async Task<IActionResult> UpdateMoneyAccountAsync(int id, [FromBody] UpdateMoneyAccountDto model)
         {
-            var moneyAccount = _moneyAccountService.Update(id, model);
+            var moneyAccount = await _moneyAccountService.UpdateAsync(id, model);
             if (moneyAccount is null)
                 return NotFound();
 
@@ -94,9 +91,9 @@ namespace AzulSchoolProject.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult DeleteMoneyAccount(int id)
+        public async Task<IActionResult> DeleteMoneyAccountAsync(int id)
         {
-            if (_moneyAccountService.Delete(id))
+            if (await _moneyAccountService.DeleteAsync(id))
                 return NoContent();
 
             return NotFound();
