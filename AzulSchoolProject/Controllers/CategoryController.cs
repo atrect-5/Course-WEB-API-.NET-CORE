@@ -1,7 +1,5 @@
 ﻿using Dtos.Category;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Models;
 using Services;
 using System.ComponentModel.DataAnnotations;
 
@@ -23,10 +21,10 @@ namespace AzulSchoolProject.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status201Created)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult CreateCategory([FromBody] CreateCategoryDto createCategoryDto)
+        public async Task<IActionResult> CreateCategoryAsync([FromBody] CreateCategoryDto createCategoryDto)
         {
-            var newCategory = _categoryService.Add(createCategoryDto);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = newCategory.Id }, newCategory);
+            var newCategory = await _categoryService.AddAsync(createCategoryDto);
+            return CreatedAtAction(nameof(GetCategoryByIdAsync), new { id = newCategory.Id }, newCategory);
         }
 
         /// <summary>
@@ -39,9 +37,9 @@ namespace AzulSchoolProject.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetCategoryById(int id)
+        public async Task<IActionResult> GetCategoryByIdAsync(int id)
         {
-            var category = _categoryService.GetCategoryById(id);
+            var category = await _categoryService.GetCategoryByIdAsync(id);
             if (category is null)
                 return NotFound(); // Return 404 Not Found if the category does not exist
 
@@ -58,9 +56,9 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna la lista de categorías.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
-        public IActionResult GetCategoriesByUserId([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null)
+        public async Task<IActionResult> GetCategoriesByUserIdAsync([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null)
         {
-            var categories = _categoryService.GetCategoriesByUserId(userId, nameFilter, typeFilter);
+            var categories = await _categoryService.GetCategoriesByUserIdAsync(userId, nameFilter, typeFilter);
             return Ok(categories); // Return 200 OK with the list of categories
         }
 
@@ -77,10 +75,10 @@ namespace AzulSchoolProject.Controllers
         [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateCategory(int id, [FromBody] UpdateCategoryDto updateCategoryDto)
+        public async Task<IActionResult> UpdateCategoryAsync(int id, [FromBody] UpdateCategoryDto updateCategoryDto)
         {
             ArgumentNullException.ThrowIfNull(updateCategoryDto);
-            var updatedCategory = _categoryService.Update(id, updateCategoryDto);
+            var updatedCategory = await _categoryService.UpdateAsync(id, updateCategoryDto);
             if (updatedCategory is null)
                 return NotFound(); // Return 404 Not Found if the category to update does not exist
 
@@ -97,9 +95,9 @@ namespace AzulSchoolProject.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult DeleteCategory(int id)
+        public async Task<IActionResult> DeleteCategoryAsync(int id)
         {
-            if (_categoryService.Delete(id))
+            if (await _categoryService.DeleteAsync(id))
                 return NoContent(); // Return 204 No Content if the category was successfully deleted
 
             return NotFound(); // Return 404 Not Found if the category to delete does not exist

@@ -1,13 +1,8 @@
 ﻿﻿using Data;
 using Dtos.Category;
+using Microsoft.EntityFrameworkCore;
 using Models;
 using Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Repositories
 {
@@ -15,7 +10,7 @@ namespace Repositories
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
 
-        public CategoryDto Add(CreateCategoryDto model)
+        public async Task<CategoryDto> AddAsync(CreateCategoryDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
             var category = new Category
@@ -25,29 +20,23 @@ namespace Repositories
                 UserId = model.UserId
             };
             ValidateCategory(category);
-            _dbContext.Categories.Add(category);
-            _dbContext.SaveChanges();
-            return new CategoryDto
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Type = category.Type,
-                UserId = category.UserId
-            };
+            await _dbContext.Categories.AddAsync(category);
+            await _dbContext.SaveChangesAsync();
+            return MapToDto(category);
         }
 
-        public bool Delete(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            var category = _dbContext.Categories.Find(id);
+            var category = await _dbContext.Categories.FindAsync(id);
             if (category is null)
                 return false;
 
             _dbContext.Categories.Remove(category);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public IEnumerable<CategoryDto> GetCategoriesByUserId(int userId, string? nameFilter = null, string? typeFilter = null)
+        public async Task<IEnumerable<CategoryDto>> GetCategoriesByUserIdAsync(int userId, string? nameFilter = null, string? typeFilter = null)
         {
             // Consulta para obtener las categorías asociadas al usuario y las globales (UserId == null).
             var query = _dbContext.Categories.Where(c => c.UserId == userId || c.UserId == null);
@@ -60,49 +49,31 @@ namespace Repositories
             if (!string.IsNullOrWhiteSpace(typeFilter))
                 query = query.Where(c => c.Type.ToLower().Equals(typeFilter.ToLower()));
 
-            return query.Select(c => new CategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Type = c.Type,
-                UserId = c.UserId
-            }).ToList();
+            return await query.Select(c => MapToDto(c)).ToListAsync();
         }
 
-        public CategoryDto? GetCategoryById(int id)
+        public async Task<CategoryDto?> GetCategoryByIdAsync(int id)
         {
-            var category = _dbContext.Categories.Find(id);
+            var category = await _dbContext.Categories.FindAsync(id);
             if (category is null)
                 return null;
 
-            return new CategoryDto
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Type = category.Type,
-                UserId = category.UserId
-            };
+            return MapToDto(category);
         }
 
 
-        public CategoryDto? Update(int id, UpdateCategoryDto model)
+        public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto model)
         {
             ArgumentNullException.ThrowIfNull(model);
-            var categoryInDb = _dbContext.Categories.Find(id);
+            var categoryInDb = await _dbContext.Categories.FindAsync(id);
             if (categoryInDb is null)
                 return null;
             
             categoryInDb.Name = model.Name;
             categoryInDb.Type = model.Type;
             ValidateCategory(categoryInDb);
-            _dbContext.SaveChanges();
-            return new CategoryDto
-            {
-                Id = categoryInDb.Id,
-                Name = categoryInDb.Name,
-                Type = categoryInDb.Type,
-                UserId = categoryInDb.UserId
-            };
+            await _dbContext.SaveChangesAsync();
+            return MapToDto(categoryInDb);
         }
 
         /// <summary>
@@ -118,6 +89,22 @@ namespace Repositories
                 string validTypesString = string.Join("', '", Category.ValidTypes);
                 throw new ArgumentException($"El tipo de categoría debe ser uno de los siguientes: '{validTypesString}'.", nameof(model));
             }
+        }
+
+        /// <summary>
+        /// Maps a <see cref="Category"/> entity to a <see cref="CategoryDto"/>.
+        /// </summary>
+        /// <param name="category">The category entity to map.</param>
+        /// <returns>A new <see cref="CategoryDto"/> instance.</returns>
+        private static CategoryDto MapToDto(Category category)
+        {
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Type = category.Type,
+                UserId = category.UserId
+            };
         }
     }
 }
