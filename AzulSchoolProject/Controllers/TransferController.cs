@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Dtos.Transfer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services;
 
 namespace AzulSchoolProject.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TransferController(ITransferService transferService) : ControllerBase

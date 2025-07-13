@@ -1,10 +1,12 @@
 ﻿using Dtos.Category;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace AzulSchoolProject.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class CategoryController(ICategoryService categoryService) : ControllerBase

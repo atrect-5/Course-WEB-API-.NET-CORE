@@ -1,5 +1,6 @@
 ﻿using Dtos;
 using Dtos.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services;
 
@@ -38,6 +39,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna el usuario solicitado.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpGet("{id}")]
+        [Authorize]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserByIdAsync(int id)
         {
@@ -54,6 +56,7 @@ namespace AzulSchoolProject.Controllers
         /// <returns>Una lista de usuarios.</returns>
         /// <response code="200">Retorna la lista de todos los usuarios.</response>
         [HttpGet]
+        [Authorize]
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsersAsync()
         {
@@ -70,6 +73,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="200">Retorna el usuario con los datos actualizados.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpPut("{id}")]
+        [Authorize]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUserAsync(int id, [FromBody] UpdateUserDto updateUserDto)
         {
@@ -88,6 +92,7 @@ namespace AzulSchoolProject.Controllers
         /// <response code="204">Si el usuario fue eliminado exitosamente.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpDelete("{id}")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteUserAsync(int id) 
         {
