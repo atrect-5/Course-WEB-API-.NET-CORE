@@ -1,4 +1,5 @@
-﻿using Dtos;
+﻿using AzulSchoolProject.Extensions;
+using Dtos;
 using Dtos.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +29,7 @@ namespace AzulSchoolProject.Controllers
             // Return status 201 Created.
             // This includes the URI of the newly created resource in the Location header
             // Also includes the created user in the response body
-            return CreatedAtAction(nameof(GetUserByIdAsync), new { id = newUser.Id }, newUser);
+            return CreatedAtRoute("GetUserById", new { id = newUser.Id }, newUser);
         }
 
         /// <summary>
@@ -37,12 +38,16 @@ namespace AzulSchoolProject.Controllers
         /// <param name="id">El ID del usuario a buscar.</param>
         /// <returns>El usuario encontrado.</returns>
         /// <response code="200">Retorna el usuario solicitado.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetUserById")]
         [Authorize]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserByIdAsync(int id)
         {
+            if (!IsOwnerOrAdmin(id))
+                return Forbid();
+
             var user = await _userService.GetUserByIdAsync(id);
             if (user is null)
                 return NotFound(); // Return 404 Not Found if the user does not exist
@@ -55,8 +60,9 @@ namespace AzulSchoolProject.Controllers
         /// </summary>
         /// <returns>Una lista de usuarios.</returns>
         /// <response code="200">Retorna la lista de todos los usuarios.</response>
+        /// <response code="403">Si el usuario no es un administrador.</response>
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllUsersAsync()
         {
@@ -71,12 +77,16 @@ namespace AzulSchoolProject.Controllers
         /// <param name="updateUserDto">El objeto con los datos para actualizar el usuario.</param>
         /// <returns>El usuario actualizado.</returns>
         /// <response code="200">Retorna el usuario con los datos actualizados.</response>
+        /// <response code="403">Si el usuario no tiene permiso para actualizar este recurso.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpPut("{id}")]
         [Authorize]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUserAsync(int id, [FromBody] UpdateUserDto updateUserDto)
         {
+            if (!IsOwnerOrAdmin(id))
+                return Forbid();
+
             var updatedUser = await _userService.UpdateAsync(id, updateUserDto);
             if (updatedUser is null)
                 return NotFound();
@@ -90,16 +100,27 @@ namespace AzulSchoolProject.Controllers
         /// <param name="id">El ID del usuario a eliminar.</param>
         /// <returns>No retorna contenido.</returns>
         /// <response code="204">Si el usuario fue eliminado exitosamente.</response>
+        /// <response code="403">Si el usuario no tiene permiso para actualizar este recurso.</response>
         /// <response code="404">Si no se encuentra el usuario con el ID especificado.</response>
         [HttpDelete("{id}")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteUserAsync(int id) 
         {
+            if (!IsOwnerOrAdmin(id))
+                return Forbid();
+
             bool isDeleted = await _userService.DeleteAsync(id);
             if (!isDeleted)
                 return NotFound();
             return NoContent(); // 204 No Content
+        }
+
+        private bool IsOwnerOrAdmin(int resourceId)
+        {
+            var currentUserId = User.GetUserId();
+            // The user is authorized if they are the owner of the resource OR if they are an Admin.
+            return currentUserId == resourceId || User.IsInRole("Admin");
         }
     }
 }
