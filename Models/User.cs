@@ -50,5 +50,10 @@ namespace Models
         /// Collection of Categories made by the user
         /// </summary>
         public ICollection<Category>? Categories { get; set; }
+
+        /// <summary>
+        /// The role associated with the user.
+        /// </summary>
+        public string Role { get; set; } = "User";
     }
 }
