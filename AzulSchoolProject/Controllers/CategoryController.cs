@@ -1,4 +1,6 @@
-﻿using Dtos.Category;
+﻿using AzulSchoolProject.Extensions;
+using Common;
+using Dtos.Category;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services;
@@ -25,8 +27,10 @@ namespace AzulSchoolProject.Controllers
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateCategoryAsync([FromBody] CreateCategoryDto createCategoryDto)
         {
-            var newCategory = await _categoryService.AddAsync(createCategoryDto);
-            return CreatedAtAction(nameof(GetCategoryByIdAsync), new { id = newCategory.Id }, newCategory);
+            var creatorId = User.GetUserId();
+            var isCreatorAdmin = User.IsInRole("Admin");
+            var newCategory = await _categoryService.AddAsync(createCategoryDto, creatorId, isCreatorAdmin);
+            return CreatedAtRoute("GetCategoryById", new { id = newCategory.Id }, newCategory);
         }
 
         /// <summary>
@@ -35,8 +39,9 @@ namespace AzulSchoolProject.Controllers
         /// <param name="id">El ID de la categoria a buscar.</param>
         /// <returns>La categoria encontrada.</returns>
         /// <response code="200">Retorna la categoria solicitada.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra la categoria con el ID especificado.</response>
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetCategoryById")]
         [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCategoryByIdAsync(int id)
@@ -45,22 +50,37 @@ namespace AzulSchoolProject.Controllers
             if (category is null)
                 return NotFound(); // Return 404 Not Found if the category does not exist
 
+            var currentUserId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            // Un usuario puede ver una categoría si:
+            // 1. Es un administrador.
+            // 2. La categoría es global (no tiene dueño).
+            // 3. La categoría le pertenece.
+            if (!isAdmin && category.UserId != null && category.UserId != currentUserId)
+                return Forbid(); // Return 403 Forbidden if the user does not have permission to view this category
+
             return Ok(category); // Return 200 OK with the category Dto
         }
 
         /// <summary>
         /// Obtiene una lista de categorías para un usuario, con filtros opcionales.
         /// </summary>
-        /// <param name="userId">El ID del usuario para el que se buscan las categorías.</param>
+        /// <param name="userId">ID del usuario para el que se listan las categorías. Solo para administradores.</param>
         /// <param name="nameFilter">Filtro opcional para buscar categorías por nombre (no sensible a mayúsculas/minúsculas).</param>
         /// <param name="typeFilter">Filtro opcional para buscar categorías por tipo (INCOME o EXPENDITURE).</param>
         /// <returns>Una lista de categorías que coinciden con los criterios.</returns>
         /// <response code="200">Retorna la lista de categorías.</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetCategoriesByUserIdAsync([FromQuery][Required] int userId, [FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null)
+        public async Task<IActionResult> GetCategoriesByUserIdAsync([FromQuery] int? userId,[FromQuery] string? nameFilter = null, [FromQuery] string? typeFilter = null)
         {
-            var categories = await _categoryService.GetCategoriesByUserIdAsync(userId, nameFilter, typeFilter);
+            var currentUserId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            var targetUserId = (isAdmin && userId.HasValue) ? userId.Value : currentUserId;
+
+            var categories = await _categoryService.GetCategoriesByUserIdAsync(targetUserId, nameFilter, typeFilter);
             return Ok(categories); // Return 200 OK with the list of categories
         }
 
@@ -72,6 +92,7 @@ namespace AzulSchoolProject.Controllers
         /// <returns>La categoría actualizada.</returns>
         /// <response code="200">Retorna la categoría con los datos actualizados.</response>
         /// <response code="400">Si los datos de la categoría son inválidos.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra la categoría con el ID especificado.</response>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
@@ -80,11 +101,16 @@ namespace AzulSchoolProject.Controllers
         public async Task<IActionResult> UpdateCategoryAsync(int id, [FromBody] UpdateCategoryDto updateCategoryDto)
         {
             ArgumentNullException.ThrowIfNull(updateCategoryDto);
-            var updatedCategory = await _categoryService.UpdateAsync(id, updateCategoryDto);
-            if (updatedCategory is null)
-                return NotFound(); // Return 404 Not Found if the category to update does not exist
+            var userId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _categoryService.UpdateAsync(id, updateCategoryDto, userId, isAdmin);
 
-            return Ok(updatedCategory); // Return 200 OK with the updated category Dto
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Status == Result.NotFound
+                    ? NotFound()
+                    : Forbid();
         }
 
         /// <summary>
@@ -93,16 +119,22 @@ namespace AzulSchoolProject.Controllers
         /// <param name="id">El ID de la categoría a eliminar.</param>
         /// <returns>No retorna contenido.</returns>
         /// <response code="204">Si la categoría fue eliminada exitosamente.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra la categoría con el ID especificado.</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteCategoryAsync(int id)
         {
-            if (await _categoryService.DeleteAsync(id))
-                return NoContent(); // Return 204 No Content if the category was successfully deleted
+            var userId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _categoryService.DeleteAsync(id, userId, isAdmin);
 
-            return NotFound(); // Return 404 Not Found if the category to delete does not exist
+            return result.IsSuccess
+                ? NoContent()
+                : result.Status == Result.NotFound
+                    ? NotFound()
+                    : Forbid();
         }
     }
 }

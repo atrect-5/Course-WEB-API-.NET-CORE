@@ -1,4 +1,5 @@
 ﻿﻿using Dtos.Category;
+using Common;
 
 namespace Services
 {
@@ -8,8 +9,10 @@ namespace Services
         /// Adds a new category to the collection.
         /// </summary>
         /// <param name="model">The category to add. Cannot be null.</param>
+        /// <param name="userId">The unique identifier of the user who is adding the category.</param>
+        /// <param name="isAdmin">Indicates whether the user has admin privileges.</param>
         /// <returns>A <see cref="CategoryDto"/> representing the newly created category.</returns>
-        Task<CategoryDto> AddAsync(CreateCategoryDto model);
+        Task<CategoryDto> AddAsync(CreateCategoryDto model, int creatorId, bool isCreatorAdmin);
 
         /// <param name="userId">The unique identifier of the user.</param>
         /// <param name="nameFilter">Optional. A name to filter the categories by.</param>
@@ -31,14 +34,18 @@ namespace Services
         /// </summary>
         /// <param name="id">The ID of the category to update.</param>
         /// <param name="model">The DTO containing the updated information.</param>
-        /// <returns>The updated category DTO, or <see langword="null"/> if the category to update is not found.</returns>
-        Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto model);
+        /// <param name="userId">The unique identifier of the user who is updating the category.</param>
+        /// <param name="isAdmin">Indicates whether the user has admin privileges.</param
+        /// <returns>An <see cref="OperationResult{T}"/> containing the updated category or an error type.</returns>
+        Task<OperationResult<CategoryDto>> UpdateAsync(int id, UpdateCategoryDto model,  int userId, bool isAdmin);
 
         /// <summary>
         /// Deletes the entity with the specified identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the entity to delete. Must be a positive integer.</param>
-        /// <returns><see langword="true"/> if the entity was successfully deleted; otherwise, <see langword="false"/>.</returns>
-        Task<bool> DeleteAsync(int id);
+        /// <param name="userId">The unique identifier of the user who is attempting to delete the category.</param>
+        /// <param name="isAdmin">Indicates whether the user has admin privileges.</param>
+        /// <returns>An <see cref="OperationResult{T}"/> indicating the outcome of the operation.</returns>
+        Task<OperationResult<bool>> DeleteAsync(int id,  int userId, bool isAdmin);
     }
 }

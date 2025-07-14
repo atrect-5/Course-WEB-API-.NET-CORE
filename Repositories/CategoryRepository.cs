@@ -1,4 +1,5 @@
-﻿﻿using Data;
+﻿﻿using Common;
+using Data;
 using Dtos.Category;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -10,14 +11,17 @@ namespace Repositories
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<CategoryDto> AddAsync(CreateCategoryDto model)
+        public async Task<CategoryDto> AddAsync(CreateCategoryDto model, int creatorId, bool isCreatorAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
             var category = new Category
             {
                 Name = model.Name,
                 Type = model.Type,
-                UserId = model.UserId
+                // Si el creador es admin Y ha especificado un UserId, se la asigna a ese usuario.
+                // Si es admin y no especifica UserId, es global (null).
+                // Si no es admin, se la asigna a sí mismo.
+                UserId = isCreatorAdmin ? model.UserId : creatorId
             };
             ValidateCategory(category);
             await _dbContext.Categories.AddAsync(category);
@@ -25,15 +29,18 @@ namespace Repositories
             return MapToDto(category);
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<OperationResult<bool>> DeleteAsync(int id, int userId, bool isAdmin)
         {
             var category = await _dbContext.Categories.FindAsync(id);
             if (category is null)
-                return false;
+                return OperationResult<bool>.Fail(Result.NotFound);
+
+            if (!isAdmin && category.UserId is not null && category.UserId != userId)
+                return OperationResult<bool>.Fail(Result.Forbidden);
 
             _dbContext.Categories.Remove(category);
             await _dbContext.SaveChangesAsync();
-            return true;
+            return OperationResult<bool>.Success(true);
         }
 
         public async Task<IEnumerable<CategoryDto>> GetCategoriesByUserIdAsync(int userId, string? nameFilter = null, string? typeFilter = null)
@@ -62,18 +69,21 @@ namespace Repositories
         }
 
 
-        public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto model)
+        public async Task<OperationResult<CategoryDto>> UpdateAsync(int id, UpdateCategoryDto model, int userId, bool isAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
             var categoryInDb = await _dbContext.Categories.FindAsync(id);
             if (categoryInDb is null)
-                return null;
+                return OperationResult<CategoryDto>.Fail(Result.NotFound);
+
+            if (!isAdmin && categoryInDb.UserId is not null && categoryInDb.UserId != userId)
+                return OperationResult<CategoryDto>.Fail(Result.Forbidden);
             
             categoryInDb.Name = model.Name;
             categoryInDb.Type = model.Type;
             ValidateCategory(categoryInDb);
             await _dbContext.SaveChangesAsync();
-            return MapToDto(categoryInDb);
+            return OperationResult<CategoryDto>.Success(MapToDto(categoryInDb));
         }
 
         /// <summary>
