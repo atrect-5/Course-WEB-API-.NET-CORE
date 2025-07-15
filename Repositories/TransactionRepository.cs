@@ -1,4 +1,5 @@
-﻿﻿using Data;
+﻿﻿using Common;
+using Data;
 using Dtos.Transaction;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -10,24 +11,32 @@ namespace Repositories
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
 
-        public async Task<TransactionDto> AddAsync(CreateTransactionDto model)
+        public async Task<OperationResult<TransactionDto>> AddAsync(CreateTransactionDto model, int userId, bool isAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
+
+            // Validamos que las entidades relacionadas existan y que el usuario tenga permiso sobre ellas.
+            var account = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountId);
+            if (account is null)
+                return OperationResult<TransactionDto>.Fail(Result.NotFound);
+            if (account.UserId != userId && !isAdmin)
+                return OperationResult<TransactionDto>.Fail(Result.Forbidden);
+
+            var category = await _dbContext.Categories.FindAsync(model.CategoryId);
+            if (category is null)
+                return OperationResult<TransactionDto>.Fail(Result.NotFound);
+            if (category.UserId is not null && category.UserId != userId && !isAdmin)
+                return OperationResult<TransactionDto>.Fail(Result.Forbidden);
+
             var transaction = new Transaction
             {
                 Amount = model.Amount,
                 Date = model.Date,
                 Description = model.Description,
-                UserId = model.UserId,
+                UserId = account.UserId,
                 CategoryId = model.CategoryId,
                 MoneyAccountId = model.MoneyAccountId
             };
-
-            // Validamos que las entidades relacionadas existan.
-            var account = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountId)
-                ?? throw new ArgumentException($"La cuenta con ID {model.MoneyAccountId} no existe.", nameof(model));
-            var category = await _dbContext.Categories.FindAsync(model.CategoryId)
-                ?? throw new ArgumentException($"La categoría con ID {model.CategoryId} no existe.", nameof(model));
 
             ApplyTransactionBalanceChange(account, category, transaction.Amount);
 
@@ -36,25 +45,29 @@ namespace Repositories
             await _dbContext.Transactions.AddAsync(transaction);
             await _dbContext.SaveChangesAsync();
 
-            return MapToDto(transaction);
+            return OperationResult<TransactionDto>.Success(MapToDto(transaction));
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<OperationResult<bool>> DeleteAsync(int id, int userId, bool isAdmin)
         {
             var transaction = await _dbContext.Transactions.FindAsync(id);
             if (transaction is null)
-                return false;
+                return OperationResult<bool>.Fail(Result.NotFound);
+
+            if (transaction.UserId != userId && !isAdmin)
+                return OperationResult<bool>.Fail(Result.Forbidden);
 
             PreventDirectModificationOfTransferTransaction(transaction);
 
             var account = await _dbContext.MoneyAccounts.FindAsync(transaction.MoneyAccountId);
             var category = await _dbContext.Categories.FindAsync(transaction.CategoryId);
 
-            RevertTransactionBalanceChange(account, category, transaction.Amount);
+            if (account is not null && category is not null)
+                RevertTransactionBalanceChange(account, category, transaction.Amount);
 
             _dbContext.Transactions.Remove(transaction);
             await _dbContext.SaveChangesAsync();
-            return true;
+            return OperationResult<bool>.Success(true);
         }
 
         public async Task<TransactionDto?> GetTransactionByIdAsync(int id)
@@ -65,7 +78,7 @@ namespace Repositories
         }
 
         public async Task<IEnumerable<TransactionDto>> GetTransactionsByUserIdAsync(
-            int userId, int? moneyAccountId = null, int? categoryId = null,
+            int? userId, int? moneyAccountId = null, int? categoryId = null,
             DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _dbContext.Transactions.Where(t => t.UserId == userId);
@@ -83,13 +96,16 @@ namespace Repositories
             return result;
         }
 
-        public async Task<TransactionDto?> UpdateAsync(int id, UpdateTransactionDto model)
+        public async Task<OperationResult<TransactionDto>> UpdateAsync(int id, UpdateTransactionDto model, int userId, bool isAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
 
             var transactionInDb = await _dbContext.Transactions.FindAsync(id);
             if (transactionInDb is null)
-                return null;
+                return OperationResult<TransactionDto>.Fail(Result.NotFound);
+
+            if (transactionInDb.UserId != userId && !isAdmin)
+                return OperationResult<TransactionDto>.Fail(Result.Forbidden);
 
             PreventDirectModificationOfTransferTransaction(transactionInDb);
 
@@ -99,10 +115,17 @@ namespace Repositories
             RevertTransactionBalanceChange(originalAccount, originalCategory, transactionInDb.Amount);
 
             // Aplicar el impacto de la nueva transacción en el saldo
-            var newAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountId)
-                ?? throw new ArgumentException($"La nueva cuenta con ID {model.MoneyAccountId} no existe.", nameof(model));
-            var newCategory = await _dbContext.Categories.FindAsync(model.CategoryId)
-                ?? throw new ArgumentException($"La nueva categoría con ID {model.CategoryId} no existe.", nameof(model));
+            var newAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountId);
+            if (newAccount is null)
+                return OperationResult<TransactionDto>.Fail(Result.NotFound);
+            if (newAccount.UserId != userId && !isAdmin)
+                return OperationResult<TransactionDto>.Fail(Result.Forbidden);
+
+            var newCategory = await _dbContext.Categories.FindAsync(model.CategoryId);
+            if (newCategory is null)
+                return OperationResult<TransactionDto>.Fail(Result.NotFound);
+            if (newCategory.UserId is not null && newCategory.UserId != userId && !isAdmin)
+                return OperationResult<TransactionDto>.Fail(Result.Forbidden);
             ApplyTransactionBalanceChange(newAccount, newCategory, model.Amount);
 
             // Actualizar los datos de la transacción en la base de datos
@@ -113,7 +136,7 @@ namespace Repositories
             transactionInDb.MoneyAccountId = model.MoneyAccountId;
 
             await _dbContext.SaveChangesAsync();
-            return MapToDto(transactionInDb);
+            return OperationResult<TransactionDto>.Success(MapToDto(transactionInDb));
         }
 
         /// <summary>

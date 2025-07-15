@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Services;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using AzulSchoolProject.Extensions;
+using Common;
 
 namespace AzulSchoolProject.Controllers
 {
@@ -27,8 +29,14 @@ namespace AzulSchoolProject.Controllers
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddTransactionAsync([FromBody] CreateTransactionDto model)
         {
-            var newTransaction = await _transactionService.AddAsync(model);
-            return CreatedAtAction(nameof(GetTransactionByIdAsync), new { id = newTransaction.Id }, newTransaction);
+            var creatorId = User.GetUserId();
+            var isCreatorAdmin = User.IsInRole("Admin");
+            var result = await _transactionService.AddAsync(model, creatorId, isCreatorAdmin);
+            return result.IsSuccess
+                ? CreatedAtRoute("GetTransactionById", new { id = result.Value!.Id }, result.Value)
+                : result.Status == Result.NotFound
+                    ? BadRequest("La cuenta o categoría especificada no existe.")
+                    : Forbid();
         }
 
         /// <summary>
@@ -37,8 +45,9 @@ namespace AzulSchoolProject.Controllers
         /// <param name="id">El ID de la transacción a buscar.</param>
         /// <returns>La transacción encontrada.</returns>
         /// <response code="200">Retorna la transacción solicitada.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra la transacción con el ID especificado.</response>
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetTransactionById")]
         [ProducesResponseType(typeof(TransactionDto), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTransactionByIdAsync(int id)
@@ -46,6 +55,13 @@ namespace AzulSchoolProject.Controllers
             var transaction = await _transactionService.GetTransactionByIdAsync(id);
             if (transaction is null)
                 return NotFound();
+
+            var currentUserId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && transaction.UserId != currentUserId)
+                return Forbid();
+            
             return Ok(transaction);
         }
 
@@ -62,10 +78,17 @@ namespace AzulSchoolProject.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<TransactionDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTransactionsByUserIdAsync(
-            [FromQuery] [Required] int userId, [FromQuery] int? moneyAccountId = null, [FromQuery] int? categoryId = null,
-            [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null) =>
-            Ok(await _transactionService.GetTransactionsByUserIdAsync(
-                userId, moneyAccountId, categoryId, startDate, endDate));
+            [FromQuery] int? userId, [FromQuery] int? moneyAccountId = null, [FromQuery] int? categoryId = null,
+            [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        {
+            var currentUserId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            var targetUserId = (isAdmin && userId.HasValue) ? userId.Value : currentUserId;
+
+            return Ok(await _transactionService.GetTransactionsByUserIdAsync(
+                targetUserId, moneyAccountId, categoryId, startDate, endDate));        
+        }
 
         /// <summary>
         /// Actualiza una transacción existente.
@@ -75,6 +98,7 @@ namespace AzulSchoolProject.Controllers
         /// <returns>La transacción actualizada.</returns>
         /// <response code="200">Retorna la transacción con los datos actualizados.</response>
         /// <response code="400">Si los datos de la transacción son inválidos.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra la transacción con el ID especificado.</response>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(TransactionDto), StatusCodes.Status200OK)]
@@ -82,10 +106,15 @@ namespace AzulSchoolProject.Controllers
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateTransactionAsync(int id, [FromBody] UpdateTransactionDto model)
         {
-            var updatedTransaction = await _transactionService.UpdateAsync(id, model);
-            if (updatedTransaction is null)
-                return NotFound();
-            return Ok(updatedTransaction);
+            var userId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _transactionService.UpdateAsync(id, model, userId, isAdmin);
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Status == Result.NotFound
+                    ? BadRequest("La transacción, cuenta o categoría especificada no existe.")
+                    : Forbid();
         }
 
         /// <summary>
@@ -94,15 +123,22 @@ namespace AzulSchoolProject.Controllers
         /// <param name="id">El ID de la transacción a eliminar.</param>
         /// <returns>No retorna contenido.</returns>
         /// <response code="204">Si la transacción fue eliminada exitosamente.</response>
+        /// <response code="403">Si el usuario no tiene permiso para ver este recurso.</response>
         /// <response code="404">Si no se encuentra la transacción con el ID especificado.</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         //[ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteTransactionAsync(int id)
         {
-            if (await _transactionService.DeleteAsync(id))
-                return NoContent();
-            return NotFound();
+            var userId = User.GetUserId();
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _transactionService.DeleteAsync(id, userId, isAdmin);
+
+            return result.IsSuccess
+                ? NoContent()
+                : result.Status == Result.NotFound
+                    ? NotFound()
+                    : Forbid();
         }
     }
 }
