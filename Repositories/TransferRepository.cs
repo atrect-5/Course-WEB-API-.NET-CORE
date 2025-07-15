@@ -1,4 +1,5 @@
-﻿﻿using Data;
+﻿﻿using Common;
+using Data;
 using Dtos.Transaction;
 using Dtos.Transfer;
 using Microsoft.EntityFrameworkCore;
@@ -13,27 +14,37 @@ namespace Repositories
         private const string TransferReceivedCategoryName = "TRANSFER RECEIVED";
         private const string TransferSentCategoryName = "TRANSFER SENT";
 
-        public async Task<TransferDto> AddAsync(CreateTransferDto model)
+        public async Task<OperationResult<TransferDto>> AddAsync(CreateTransferDto model, int userId, bool isAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
+
+            if (model.MoneyAccountSendId == model.MoneyAccountReceiveId)
+                throw new ArgumentException("La cuenta de origen y destino no pueden ser la misma.", nameof(model));
+
+            var sendingAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountSendId);
+            if (sendingAccount is null)
+                return OperationResult<TransferDto>.Fail(Result.NotFound);
+            if (sendingAccount.UserId != userId && !isAdmin)
+                return OperationResult<TransferDto>.Fail(Result.Forbidden);
+
+            var receivingAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountReceiveId);
+            if (receivingAccount is null)
+                return OperationResult<TransferDto>.Fail(Result.NotFound);
+            if (receivingAccount.UserId != userId && !isAdmin)
+                return OperationResult<TransferDto>.Fail(Result.Forbidden);
+
+            if (receivingAccount.UserId != sendingAccount.UserId)
+                throw new ArgumentException("La cuenta de origen y destino deben ser del mismo usuario.", nameof(model));
+
             var transfer = new Transfer
             {
                 Amount = model.Amount,
                 Date = model.Date ?? DateTime.Now,
                 Description = model.Description,
-                UserId = model.UserId,
+                UserId = sendingAccount.UserId,
                 MoneyAccountSendId = model.MoneyAccountSendId,
                 MoneyAccountReceiveId = model.MoneyAccountReceiveId
             };
-
-            if (model.MoneyAccountSendId == model.MoneyAccountReceiveId)
-                throw new ArgumentException("La cuenta de origen y destino no pueden ser la misma.", nameof(model));
-
-            var sendingAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountSendId)
-                ?? throw new ArgumentException($"La cuenta de origen con ID {model.MoneyAccountSendId} no existe.", nameof(model));
-
-            var receivingAccount = await _dbContext.MoneyAccounts.FindAsync(model.MoneyAccountReceiveId)
-                ?? throw new ArgumentException($"La cuenta de destino con ID {model.MoneyAccountReceiveId} no existe.", nameof(model));
 
             if (sendingAccount.AccountType != "CREDIT" && sendingAccount.Balance < transfer.Amount)
                 throw new InvalidOperationException("La cuenta de origen no tiene fondos suficientes para realizar la transferencia.");
@@ -64,10 +75,10 @@ namespace Repositories
             await _dbContext.Transactions.AddAsync(incomeTransaction);
 
             await _dbContext.SaveChangesAsync();
-            return MapToDto(transfer);
+            return OperationResult<TransferDto>.Success(MapToDto(transfer));
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<OperationResult<bool>> DeleteAsync(int id, int userId, bool isAdmin)
         {
             // Incluimos las transacciones para borrarlas en cascada
             var transfer = await _dbContext.Transfers
@@ -75,7 +86,9 @@ namespace Repositories
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (transfer is null)
-                return false;
+                return OperationResult<bool>.Fail(Result.NotFound);
+            if (transfer.UserId != userId && !isAdmin)
+                return OperationResult<bool>.Fail(Result.Forbidden);
 
             // Revertir cambios de saldo 
             var sendingAccount = await _dbContext.MoneyAccounts.FindAsync(transfer.MoneyAccountSendId);
@@ -87,13 +100,12 @@ namespace Repositories
             if (receivingAccount is not null)
                 receivingAccount.Balance += receivingAccount.AccountType == "CREDIT" ? transfer.Amount : -transfer.Amount;
             
-
             // Eliminar las transacciones asociadas y la transferencia
             _dbContext.Transactions.RemoveRange(transfer.Transactions);
             _dbContext.Transfers.Remove(transfer);
 
             await _dbContext.SaveChangesAsync();
-            return true;
+            return OperationResult<bool>.Success(true);
         }
 
         public async Task<TransferDto?> GetTransferByIdAsync(int id)

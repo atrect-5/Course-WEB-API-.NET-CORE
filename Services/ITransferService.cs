@@ -1,4 +1,5 @@
-﻿using Dtos.Transfer;
+﻿using Common;
+using Dtos.Transfer;
 
 namespace Services
 {
@@ -8,8 +9,10 @@ namespace Services
         /// Adds a new transfer to the system.
         /// </summary>
         /// <param name="model">The DTO for creating the transfer. Must not be <see langword="null"/>.</param>
+        /// <param name="userId">The ID of the user creating the transaction.</param>
+        /// <param name="isAdmin">A flag indicating if the user is an administrator.</param>
         /// <returns>A <see cref="TransferDto"/> representing the newly created transfer.</returns>
-        Task<TransferDto> AddAsync(CreateTransferDto model);
+        Task<OperationResult<TransferDto>> AddAsync(CreateTransferDto model, int userId, bool isAdmin);
 
         /// <summary>
         /// Retrieves a Transfer by its unique identifier.
@@ -39,7 +42,9 @@ namespace Services
         /// Deletes the specified Transfer from the system.
         /// </summary>
         /// <param name="id">The unique identifier of the Transfer to delete. Must be a positive integer.</param>
+        /// <param name="userId">The ID of the user who is deleting the transaction.</param>
+        /// <param name="isAdmin">A flag indicating if the user is an administrator.</param>
         /// <returns><see langword="true"/> if the Transfer was successfully deleted; otherwise, <see langword="false"/>.</returns>
-        Task<bool> DeleteAsync(int id);
+        Task<OperationResult<bool>> DeleteAsync(int id, int userId, bool isAdmin);
     }
 }
