@@ -1,4 +1,5 @@
-﻿using Data;
+﻿using Common;
+using Data;
 using Dtos.MoneyAccount;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -9,11 +10,16 @@ namespace Repositories
     public class MoneyAccountRepository(ProjectDBContext context) : IMoneyAccountService
     {
         private readonly ProjectDBContext _dbContext = context ?? throw new ArgumentNullException(nameof(context));
-        public async Task<MoneyAccountDto> AddAsync(CreateMoneyAccountDto model)
+        public async Task<MoneyAccountDto> AddAsync(CreateMoneyAccountDto model, int creatorId, bool isCreatorAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
-            _ = await _dbContext.Users.FindAsync(model.UserId)
-                ?? throw new ArgumentException($"No se encontró un usuario con el ID {model.UserId}.", nameof(model));
+            // Si el usuario es administrador y agrego un id diferente al suyo, se usa ese, si no, se usa el del usuario
+            var ownerId = (isCreatorAdmin && model.UserId.HasValue)
+                ? model.UserId.Value
+                : creatorId;
+
+            _ = await _dbContext.Users.FindAsync(ownerId)
+                ?? throw new ArgumentException($"No se encontró un usuario con el ID {ownerId}.", nameof(model));
 
             var moneyAccount = new MoneyAccount
             {
@@ -21,7 +27,7 @@ namespace Repositories
                 AccountType = model.AccountType,
                 Balance = model.Balance,
                 CreditLimit = model.CreditLimit,
-                UserId = model.UserId
+                UserId = ownerId
             };
             ValidateAndPrepareAccount(moneyAccount);
 
@@ -31,15 +37,18 @@ namespace Repositories
             return MapToDto(moneyAccount);
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<OperationResult<bool>> DeleteAsync(int id, int userId, bool isAdmin)
         {
             var account = await _dbContext.MoneyAccounts.FindAsync(id);
             if (account is null)
-                return false;
+                return OperationResult<bool>.Fail(Result.NotFound);
+
+            if (!isAdmin && account.UserId != userId)
+                return OperationResult<bool>.Fail(Result.Forbidden);
 
             _dbContext.MoneyAccounts.Remove(account);
             await _dbContext.SaveChangesAsync();
-            return true;
+            return OperationResult<bool>.Success(true);
         }
 
         public async Task<MoneyAccountDto?> GetMoneyAccountByIdAsync(int id)
@@ -66,13 +75,16 @@ namespace Repositories
             return await query.Select(ma => MapToDto(ma)).ToListAsync();
         }
 
-        public async Task<MoneyAccountDto?> UpdateAsync(int id, UpdateMoneyAccountDto  model)
+        public async Task<OperationResult<MoneyAccountDto>> UpdateAsync(int id, UpdateMoneyAccountDto  model, int userId, bool isAdmin)
         {
             ArgumentNullException.ThrowIfNull(model);
 
             var accountInDb = await _dbContext.MoneyAccounts.FindAsync(id);
             if (accountInDb is null)
-                return null; 
+                return OperationResult<MoneyAccountDto>.Fail(Result.NotFound);
+
+            if (!isAdmin && accountInDb.UserId != userId)
+                return OperationResult<MoneyAccountDto>.Fail(Result.Forbidden);; 
 
             accountInDb.Name = model.Name;
             accountInDb.AccountType = model.AccountType;
@@ -80,7 +92,7 @@ namespace Repositories
 
             ValidateAndPrepareAccount(accountInDb);
             await _dbContext.SaveChangesAsync();
-            return MapToDto(accountInDb);
+            return OperationResult<MoneyAccountDto>.Success(MapToDto(accountInDb));
         }
 
         /// <summary>

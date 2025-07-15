@@ -15,7 +15,10 @@ namespace Dtos.MoneyAccount
 
         public decimal? CreditLimit { get; set; }
 
-        [Required(ErrorMessage = "El ID del usuario es obligatorio.")]
-        public int UserId { get; set; }
+        /// <summary>
+        /// Optional. For administrators to specify the owner of the new account.
+        /// If not provided, the account is assigned to the user making the request.
+        /// </summary>
+        public int? UserId { get; set; }
     }
 }
