@@ -36,7 +36,7 @@ namespace Services
         /// <param name="endDate">Optional. The end date of the date range filter.</param>
         /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="TransactionDto"/> objects matching the criteria.</returns>
         Task<IEnumerable<TransactionDto>> GetTransactionsByUserIdAsync(
-            int? userId, int? moneyAccountId = null, int? categoryId = null,
+            int userId, int? moneyAccountId = null, int? categoryId = null,
             DateTime? startDate = null, DateTime? endDate = null
         );
 

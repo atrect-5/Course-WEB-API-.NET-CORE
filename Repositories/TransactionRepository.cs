@@ -78,7 +78,7 @@ namespace Repositories
         }
 
         public async Task<IEnumerable<TransactionDto>> GetTransactionsByUserIdAsync(
-            int? userId, int? moneyAccountId = null, int? categoryId = null,
+            int userId, int? moneyAccountId = null, int? categoryId = null,
             DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _dbContext.Transactions.Where(t => t.UserId == userId);

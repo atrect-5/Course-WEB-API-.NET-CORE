@@ -68,7 +68,7 @@ namespace AzulSchoolProject.Controllers
         /// <summary>
         /// Obtiene una lista de transacciones para un usuario, con filtros opcionales.
         /// </summary>
-        /// <param name="userId">El ID del usuario para el que se buscan las transacciones.</param>
+        /// <param name="userId">El ID del usuario para el que se buscan las transacciones (Solo para administradores).</param>
         /// <param name="moneyAccountId">Filtro opcional para buscar transacciones por cuenta de dinero.</param>
         /// <param name="categoryId">Filtro opcional para buscar transacciones por categoría.</param>
         /// <param name="startDate">Filtro opcional para buscar transacciones desde una fecha.</param>
