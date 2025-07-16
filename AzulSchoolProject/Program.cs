@@ -77,10 +77,23 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.  
-if (app.Environment.IsDevelopment())
+// Aplicar migraciones pendientes al iniciar la aplicación. (Asi heroku hara la migracion al hacer el despliegue)
+using (var scope = app.Services.CreateScope())
 {
+    var services = scope.ServiceProvider;
+    try
+    {
+        var dbContext = services.GetRequiredService<ProjectDBContext>();
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+        // En un escenario real, podrías querer manejar este error de forma más robusta.
+    }
 }
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
