@@ -83,7 +83,12 @@ if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL")))
     var databaseUri = new Uri(databaseUrl);
     string[] userInfo = databaseUri.UserInfo.Split(':');
      connectionString =  new Npgsql.NpgsqlConnectionStringBuilder {
-        Host = databaseUri.Host, Database = databaseUri.LocalPath.TrimStart('/'), Username = userInfo[0], Password = userInfo[1], Port = databaseUri.Port > 0 ? databaseUri.Port : 5432, SslMode = Npgsql.SslMode.Require, TrustServerCertificate = true
+         Host = databaseUri.Host,
+         Database = databaseUri.LocalPath.TrimStart('/'),
+         Username = userInfo[0],
+         Password = userInfo[1],
+         Port = databaseUri.Port > 0 ? databaseUri.Port : 5432,
+         SslMode = Npgsql.SslMode.Require
     }.ToString();
 } 
 
