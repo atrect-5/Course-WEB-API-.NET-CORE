@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>  <!-- O el framework que uses -->
+    <MSBuildProjectExtensionsPath>$(MSBuildThisFileDirectory)obj</MSBuildProjectExtensionsPath>
+  </PropertyGroup>
+</Project>
