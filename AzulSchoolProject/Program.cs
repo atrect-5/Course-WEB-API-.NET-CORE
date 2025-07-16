@@ -88,7 +88,7 @@ if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL")))
 } 
 
 builder.Services.AddDbContext<ProjectDBContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.CommandTimeout(90)));
 
 // Add Authentication
 builder.Services.AddAuthentication(options =>
