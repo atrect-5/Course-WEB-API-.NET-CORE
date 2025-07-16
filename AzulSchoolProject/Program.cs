@@ -56,27 +56,37 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Add conection to the DataBase
-var connectionString = builder.Configuration.GetConnectionString("ProjectServer");
+string connectionString = builder.Configuration.GetConnectionString("ProjectServer") ?? "";
 
-// En Heroku, la cadena de conexión se proporciona a través de la variable de entorno DATABASE_URL.
-// Este código la transforma al formato que Npgsql espera y habilita SSL, que es requerido por Heroku.
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (!string.IsNullOrEmpty(databaseUrl))
-{
-    var databaseUri = new Uri(databaseUrl);
-    var userInfo = databaseUri.UserInfo.Split(':');
-    var pgBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+// Check if DATABASE_URL is set (Heroku/Supabase environment).  If not, try Supabase settings.
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL")))
+{    
+    string? supabaseHost = Environment.GetEnvironmentVariable("SUPABASE_DB_HOST");
+    string? supabasePort = Environment.GetEnvironmentVariable("SUPABASE_DB_PORT");
+    string? supabaseDatabase = Environment.GetEnvironmentVariable("SUPABASE_DB_NAME");
+    string? supabaseUser = Environment.GetEnvironmentVariable("SUPABASE_DB_USER");
+    string? supabasePassword = Environment.GetEnvironmentVariable("SUPABASE_DB_PASSWORD");
+
+    if (!string.IsNullOrEmpty(supabaseHost) && !string.IsNullOrEmpty(supabaseDatabase) && !string.IsNullOrEmpty(supabaseUser) && !string.IsNullOrEmpty(supabasePassword))
     {
-        Host = databaseUri.Host,
-        Port = databaseUri.Port,
-        Username = userInfo[0],
-        Password = userInfo[1],
-        Database = databaseUri.LocalPath.TrimStart('/'),
-        SslMode = Npgsql.SslMode.Require,
-        TrustServerCertificate = true,
-    };
-    connectionString = pgBuilder.ToString();
-}
+        connectionString = $"Host={supabaseHost};Port={supabasePort ?? "5432"};Database={supabaseDatabase};Username={supabaseUser};Password={supabasePassword};Pooling=true;SSL Mode=Require;Trust Server Certificate=True;";
+    }
+    else
+    {
+        // If no Supabase environment variables are set, try to get the connection string from the configuration (for local development).
+        connectionString = builder.Configuration.GetConnectionString("ProjectServer") ?? ""; // Provide a default if all else fails.
+    }
+} else {
+     // Heroku / Supabase with DATABASE_URL
+    string databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")!;
+    databaseUrl = databaseUrl.Replace("postgres://", "postgresql://"); // Ensure correct scheme for Npgsql
+    var databaseUri = new Uri(databaseUrl);
+    string[] userInfo = databaseUri.UserInfo.Split(':');
+     connectionString =  new Npgsql.NpgsqlConnectionStringBuilder {
+        Host = databaseUri.Host, Database = databaseUri.LocalPath.TrimStart('/'), Username = userInfo[0], Password = userInfo[1], Port = databaseUri.Port > 0 ? databaseUri.Port : 5432, SslMode = Npgsql.SslMode.Require, TrustServerCertificate = true
+    }.ToString();
+} 
+
 builder.Services.AddDbContext<ProjectDBContext>(options =>
     options.UseNpgsql(connectionString));
 
