@@ -1,102 +1,140 @@
-# API de Control de Gastos - Proyecto Azul School
+# Expense Tracking API - Azul School Project
 
-Este repositorio contiene el código fuente de una API RESTful para el control de gastos personales, desarrollada como práctica para el curso de Web API con ASP.NET Core de Azul School.
+This repository contains the source code for a RESTful API for personal expense tracking, developed as a practice project for the Web API with ASP.NET Core course at Azul School.
 
-La API permite a los usuarios registrarse, gestionar sus cuentas de dinero, registrar transacciones (ingresos y egresos) y transferir fondos entre sus cuentas.
+The API allows users to register, manage their money accounts, record transactions (income and expenses), and transfer funds between their accounts.
 
-## ✨ Características Principales
+## ✨ Key Features
 
-- **Autenticación Segura:** Implementación de autenticación basada en JSON Web Tokens (JWT).
-- **Gestión de Usuarios:** Creación y gestión de perfiles de usuario.
-- **Cuentas de Dinero:** Creación de múltiples "apartados" o cuentas de dinero por usuario.
-- **Registro de Transacciones:** Registro de ingresos y gastos asociados a categorías.
-- **Transferencias Internas:** Movimiento de fondos entre las cuentas del propio usuario.
-- **Consultas y Listados:** Endpoints para consultar transacciones por categoría y transferencias.
-- **Documentación de API:** Interfaz de Swagger UI para explorar y probar los endpoints de forma interactiva.
+- **Secure Authentication:** Implementation of authentication based on JSON Web Tokens (JWT).
+- **User Management:** Creation and management of user profiles.
+- **Money Accounts:** Creation of multiple "sections" or money accounts per user.
+- **Transaction Recording:** Recording of income and expenses associated with categories.
+- **Internal Transfers:** Movement of funds between the user's own accounts.
+- **Queries and Listings:** Endpoints for querying transactions by category and transfers.
+- **API Documentation:** Swagger UI interface to explore and test endpoints interactively.
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Technologies Used
 
 - **Framework:** .NET 8.0
-- **Lenguaje:** C#
-- **Base de Datos:** PostgreSQL
+- **Language:** C#
+- **Database:** PostgreSQL
 - **ORM:** Entity Framework Core 8
-- **Autenticación:** JWT (JSON Web Tokens)
-- **Arquitectura:** API RESTful
+- **Authentication:** JWT (JSON Web Tokens)
+- **Architecture:** RESTful API
 
 ---
 
-## 🚀 Cómo Empezar (Configuración Local)
+## 🚀 Getting Started (Local Setup)
 
-Sigue estos pasos para clonar y ejecutar el proyecto en tu máquina local.
+Follow these steps to clone and run the project on your local machine.
 
-### Prerrequisitos
+### Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [PostgreSQL](https://www.postgresql.org/download/) instalado y corriendo.
-- Un editor de código como [Visual Studio Code](https://code.visualstudio.com/) o [Visual Studio](https://visualstudio.microsoft.com/).
+- [PostgreSQL](https://www.postgresql.org/download/) installed and running.
+- A code editor like [Visual Studio Code](https://code.visualstudio.com/) or [Visual Studio](https://visualstudio.microsoft.com/).
 - [Git](https://git-scm.com/downloads)
 
-### 1. Clonar el Repositorio
+### 1. Clone the Repository# Expense Tracking API - Azul School Project
+
+This repository contains the source code for a RESTful API for personal expense tracking, developed as a practice project for the Web API with ASP.NET Core course at Azul School.
+
+The API allows users to register, manage their money accounts, record transactions (income and expenses), and transfer funds between their accounts.
+
+## ✨ Key Features
+
+- **Secure Authentication:** Implementation of authentication based on JSON Web Tokens (JWT).
+- **User Management:** Creation and management of user profiles.
+- **Money Accounts:** Creation of multiple "sections" or money accounts per user.
+- **Transaction Recording:** Recording of income and expenses associated with categories.
+- **Internal Transfers:** Movement of funds between the user's own accounts.
+- **Queries and Listings:** Endpoints for querying transactions by category and transfers.
+- **API Documentation:** Swagger UI interface to explore and test endpoints interactively.
+
+## 🛠️ Technologies Used
+
+- **Framework:** .NET 8.0
+- **Language:** C#
+- **Database:** PostgreSQL
+- **ORM:** Entity Framework Core 8
+- **Authentication:** JWT (JSON Web Tokens)
+- **Architecture:** RESTful API
+
+---
+
+## 🚀 Getting Started (Local Setup)
+
+Follow these steps to clone and run the project on your local machine.
+
+### Prerequisites
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [PostgreSQL](https://www.postgresql.org/download/) installed and running.
+- A code editor like [Visual Studio Code](https://code.visualstudio.com/) or [Visual Studio](https://visualstudio.microsoft.com/).
+- [Git](https://git-scm.com/downloads)
+
+### 1. Clone the Repository
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone <REPOSITORY_URL>
 cd AzulSchoolProject
 ```
 
-### 2. Configurar Secretos de la Aplicación
+### 2. Configure Application Secrets
 
-Por seguridad, las claves secretas y la cadena de conexión no se guardan en el repositorio. Usamos la herramienta `dotnet user-secrets` para gestionarlas localmente.
+For security, secret keys and the connection string are not stored in the repository. We use the `dotnet user-secrets`  tool to manage them locally.
 
-**a. Inicializa los secretos de usuario:**
+**a. Initialize User Secrets:**
 
 ```bash
 dotnet user-secrets init
 ```
 
-**b. Agrega la Cadena de Conexión a tu base de datos PostgreSQL:**
+**b. Add the Connection String to your PostgreSQL database:**
 
-> **Nota:** Asegúrate de haber creado una base de datos vacía en PostgreSQL para este proyecto.
+> **Note:** Ensure you have created an empty database in PostgreSQL for this project.
 
 ```bash
-# Reemplaza los valores con los de tu configuración de PostgreSQL
-dotnet user-secrets set "ConnectionStrings:ProjectServer" "Host=localhost;Port=5432;Database=NombreDeTuDB;Username=tu_usuario;Password=tu_contraseña"
+# Replace the values with your PostgreSQL configuration
+dotnet user-secrets set "ConnectionStrings:ProjectServer" "Host=localhost;Port=5432;Database=YourDBName;Username=your_user;Password=your_password"
 ```
 
-**c. Agrega la Clave Secreta para JWT:**
+**c. Add the JWT Secret Key:**
 
-La clave debe ser larga y aleatoria. Puedes generar una con el siguiente comando en PowerShell y usar el resultado:
+The key must be long and random. You can generate one with the following command in PowerShell and use the result:
 
 ```powershell
-# Comando para generar una clave segura en PowerShell
+# Command to generate a secure key in PowerShell
 [Convert]::ToBase64String((1..32 | % { [byte](Get-Random -Maximum 256) }))
 ```
 
-Usa la clave generada en el siguiente comando:
+Use the generated key in the following command:
 
 ```bash
-dotnet user-secrets set "Jwt:Key" "PEGA_AQUI_TU_CLAVE_GENERADA"
+dotnet user-secrets set "Jwt:Key" "PASTE_YOUR_GENERATED_KEY_HERE"
 ```
 
-### 3. Aplicar las Migraciones de la Base de Datos
+### 3. Apply Database Migrations
 
-Esto creará el esquema de la base de datos (tablas, relaciones, etc.) basado en los modelos de la aplicación.
+This will create the database schema (tables, relationships, etc.) based on the application models.
 
 ```bash
 dotnet ef database update
 ```
 
-### 4. Ejecutar la Aplicación
+### 4. Run the Application
 
 ```bash
 dotnet run
 ```
 
-La API estará disponible en `https://localhost:7038` (o el puerto que se indique en la consola).
+The API will be available at `https://localhost:7038` (or the port indicated in the console).
 
-## 📖 Uso de la API
+## 📖 API Usage
 
-1.  **Explora los Endpoints:** Navega a `https://localhost:7038/swagger` para ver la documentación interactiva de la API.
-2.  **Regístrate:** Crea un nuevo usuario usando el endpoint `POST /api/Users`.
-3.  **Inicia Sesión:** Usa el endpoint `POST /api/Authentication/login` con el email y contraseña del usuario que creaste. La respuesta contendrá tu token JWT.
-4.  **Autoriza tus Peticiones:** En la parte superior derecha de Swagger, haz clic en el botón `Authorize`. En el diálogo, escribe `Bearer ` seguido de tu token (ej: `Bearer eyJhbGciOi...`) y haz clic en "Authorize".
-5.  **Usa los Endpoints Protegidos:** Ahora puedes usar el resto de los endpoints que requieren autenticación. Swagger incluirá automáticamente el token en cada petición.
+1.  **Explore Endpoints:** Navigate to `https://localhost:7038/swagger` to view the interactive API documentation.
+2.  **Register:** Create a new user using the `POST /api/Users` endpoint.
+3.  **Log In:** Use the `POST /api/Authentication/login` endpoint with the email and password of the user you created. The response will contain your JWT token.
+4.  **Authorize your Requests:** In the top right of Swagger, click the "Authorize" button. In the dialog, enter `Bearer ` followed by your token (e.g., `Bearer eyJhbGciOi...`) and click "Authorize".
+5.  **Use the Protected Endpoints:** You can now use the rest of the endpoints that require authentication. Swagger will automatically include the token in each request.
