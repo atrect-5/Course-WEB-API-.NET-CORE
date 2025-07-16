@@ -56,8 +56,29 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Add conection to the DataBase
+var connectionString = builder.Configuration.GetConnectionString("ProjectServer");
+
+// En Heroku, la cadena de conexión se proporciona a través de la variable de entorno DATABASE_URL.
+// Este código la transforma al formato que Npgsql espera y habilita SSL, que es requerido por Heroku.
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    var databaseUri = new Uri(databaseUrl);
+    var userInfo = databaseUri.UserInfo.Split(':');
+    var pgBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = databaseUri.Host,
+        Port = databaseUri.Port,
+        Username = userInfo[0],
+        Password = userInfo[1],
+        Database = databaseUri.LocalPath.TrimStart('/'),
+        SslMode = Npgsql.SslMode.Require,
+        TrustServerCertificate = true,
+    };
+    connectionString = pgBuilder.ToString();
+}
 builder.Services.AddDbContext<ProjectDBContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("ProjectServer")));
+    options.UseNpgsql(connectionString));
 
 // Add Authentication
 builder.Services.AddAuthentication(options =>
