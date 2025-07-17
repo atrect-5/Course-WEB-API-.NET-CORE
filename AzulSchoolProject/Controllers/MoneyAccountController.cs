@@ -18,7 +18,7 @@ namespace AzulSchoolProject.Controllers
         /// <summary>
         /// Crea una nueva cuenta de dinero.
         /// </summary>
-        /// <param name="model">El objeto con los datos para crear la nueva cuenta.</param>
+        /// <param name="model">El objeto con los datos para crear la nueva cuenta (El tipo de cuenta "accountType" debe ser "CASH", "DEBIT" o "CREDIT").</param>
         /// <returns>La cuenta de dinero recién creada.</returns>
         /// <response code="201">Retorna la cuenta recién creada y la URL para acceder a ella.</response>
         /// <response code="400">Si el objeto enviado es inválido.</response>

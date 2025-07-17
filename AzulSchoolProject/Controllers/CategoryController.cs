@@ -18,7 +18,7 @@ namespace AzulSchoolProject.Controllers
         /// <summary>
         /// Crea una nueva categoría.
         /// </summary>
-        /// <param name="createCategoryDto">El objeto con los datos para crear la nueva categoría.</param>
+        /// <param name="createCategoryDto">El objeto con los datos para crear la nueva categoría (El tipo de categoria "Type" debe ser "INCOME" o "EXPENDITURE").</param>
         /// <returns>La categoría recién creada.</returns>
         /// <response code="201">Retorna la categoría recién creada y la URL para acceder a ella.</response>
         /// <response code="400">Si el objeto enviado es inválido (ej. tipo de categoría incorrecto).</response>
