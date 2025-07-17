@@ -81,6 +81,9 @@ namespace AzulSchoolProject.Controllers
             [FromQuery] int? userId, [FromQuery] int? moneyAccountId = null, [FromQuery] int? categoryId = null,
             [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
+            if (startDate is not null && endDate is not null && startDate > endDate)
+                return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
+
             var currentUserId = User.GetUserId();
             var isAdmin = User.IsInRole("Admin");
 
