@@ -18,6 +18,7 @@ builder.Services.AddScoped<ICategoryService, CategoryRepository>();
 builder.Services.AddScoped<IMoneyAccountService, MoneyAccountRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionRepository>();
 builder.Services.AddScoped<ITransferService, TransferRepository>();
+builder.Services.AddScoped<IFinancialSummaryService, FinancialSummaryRepository>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle  
