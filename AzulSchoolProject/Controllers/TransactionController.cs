@@ -71,8 +71,8 @@ namespace AzulSchoolProject.Controllers
         /// <param name="userId">El ID del usuario para el que se buscan las transacciones (Solo para administradores).</param>
         /// <param name="moneyAccountId">Filtro opcional para buscar transacciones por cuenta de dinero.</param>
         /// <param name="categoryId">Filtro opcional para buscar transacciones por categoría.</param>
-        /// <param name="startDate">Filtro opcional para buscar transacciones desde una fecha.</param>
-        /// <param name="endDate">Filtro opcional para buscar transacciones hasta una fecha.</param>
+        /// <param name="startDate">Filtro opcional para buscar transacciones desde una fecha (formato: YYYY-MM-DD).</param>
+        /// <param name="endDate">Filtro opcional para buscar transacciones hasta una fecha (formato: YYYY-MM-DD).</param>
         /// <returns>Una lista de transacciones que coinciden con los criterios.</returns>
         /// <response code="200">Retorna la lista de transacciones.</response>
         [HttpGet]
