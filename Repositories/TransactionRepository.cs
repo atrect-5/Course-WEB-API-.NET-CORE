@@ -31,7 +31,7 @@ namespace Repositories
             var transaction = new Transaction
             {
                 Amount = model.Amount,
-                Date = model.Date,
+                Date = model.Date ??= DateTime.Now,
                 Description = model.Description,
                 UserId = account.UserId,
                 CategoryId = model.CategoryId,
@@ -39,8 +39,6 @@ namespace Repositories
             };
 
             ApplyTransactionBalanceChange(account, category, transaction.Amount);
-
-            transaction.Date ??= DateTime.Now;
 
             await _dbContext.Transactions.AddAsync(transaction);
             await _dbContext.SaveChangesAsync();

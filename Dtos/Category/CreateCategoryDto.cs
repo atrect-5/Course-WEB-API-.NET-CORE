@@ -16,6 +16,6 @@ namespace Dtos.Category
         [Required(ErrorMessage = "El tipo de la categoría es obligatorio.")]
         public required string Type { get; set; }
 
-        public int? UserId { get; set; }
+        public int? UserId { get; set; } = null;
     }
 }

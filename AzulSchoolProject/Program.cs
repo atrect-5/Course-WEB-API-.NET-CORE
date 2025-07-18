@@ -18,6 +18,7 @@ builder.Services.AddScoped<ICategoryService, CategoryRepository>();
 builder.Services.AddScoped<IMoneyAccountService, MoneyAccountRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionRepository>();
 builder.Services.AddScoped<ITransferService, TransferRepository>();
+builder.Services.AddScoped<IStatisticsService, StatisticsRepository>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle  
@@ -113,25 +114,12 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Aplicar migraciones pendientes al iniciar la aplicación. (Asi heroku hara la migracion al hacer el despliegue)
-using (var scope = app.Services.CreateScope())
+// Configure the HTTP request pipeline.  
+if (app.Environment.IsDevelopment())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        var dbContext = services.GetRequiredService<ProjectDBContext>();
-        dbContext.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
-        // En un escenario real, podrías querer manejar este error de forma más robusta.
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-
-app.UseSwagger();
-app.UseSwaggerUI();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 

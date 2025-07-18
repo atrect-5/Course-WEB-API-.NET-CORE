@@ -68,8 +68,8 @@ namespace AzulSchoolProject.Controllers
         /// </summary>
         /// <param name="userId">El ID del usuario para el que se buscan las transferencias (Solo para admins).</param>
         /// <param name="moneyAccountId">Filtro opcional para buscar transferencias por cuenta de dinero.</param>
-        /// <param name="startDate">Filtro opcional para buscar transferencias desde una fecha.</param>
-        /// <param name="endDate">Filtro opcional para buscar transferencias hasta una fecha.</param>
+        /// <param name="startDate">Filtro opcional para buscar transferencias desde una fecha (formato: YYYY-MM-DD).</param>
+        /// <param name="endDate">Filtro opcional para buscar transferencias hasta una fecha (formato: YYYY-MM-DD).</param>
         /// <returns>Una lista de transferencias que coinciden con los criterios.</returns>
         /// <response code="200">Retorna la lista de transferencias.</response>
         [HttpGet]
@@ -77,6 +77,9 @@ namespace AzulSchoolProject.Controllers
         public async Task<IActionResult> GetTransfersByUserIdAsync(
             [FromQuery] int? userId, [FromQuery] int? moneyAccountId = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
+            if (startDate is not null && endDate is not null && startDate > endDate)
+                return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
+
             var currentUserId = User.GetUserId();
             var isAdmin = User.IsInRole("Admin");
 

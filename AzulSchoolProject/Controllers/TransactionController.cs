@@ -71,8 +71,8 @@ namespace AzulSchoolProject.Controllers
         /// <param name="userId">El ID del usuario para el que se buscan las transacciones (Solo para administradores).</param>
         /// <param name="moneyAccountId">Filtro opcional para buscar transacciones por cuenta de dinero.</param>
         /// <param name="categoryId">Filtro opcional para buscar transacciones por categoría.</param>
-        /// <param name="startDate">Filtro opcional para buscar transacciones desde una fecha.</param>
-        /// <param name="endDate">Filtro opcional para buscar transacciones hasta una fecha.</param>
+        /// <param name="startDate">Filtro opcional para buscar transacciones desde una fecha (formato: YYYY-MM-DD).</param>
+        /// <param name="endDate">Filtro opcional para buscar transacciones hasta una fecha (formato: YYYY-MM-DD).</param>
         /// <returns>Una lista de transacciones que coinciden con los criterios.</returns>
         /// <response code="200">Retorna la lista de transacciones.</response>
         [HttpGet]
@@ -81,6 +81,9 @@ namespace AzulSchoolProject.Controllers
             [FromQuery] int? userId, [FromQuery] int? moneyAccountId = null, [FromQuery] int? categoryId = null,
             [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
+            if (startDate is not null && endDate is not null && startDate > endDate)
+                return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
+
             var currentUserId = User.GetUserId();
             var isAdmin = User.IsInRole("Admin");
 
