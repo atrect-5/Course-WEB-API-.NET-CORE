@@ -39,12 +39,13 @@ namespace Repositories
             if (categoryType != "INCOME" && categoryType != "EXPENDITURE")
                 throw new ArgumentException("El tipo de categoría debe ser 'INCOME' o 'EXPENDITURE'.", nameof(categoryType));
 
-            var query = await _context.Transactions
+            IQueryable<CategorySummaryDto> query = _context.Transactions
                 .Where(t =>
                     t.UserId == userId &&
                     t.Category.Type == categoryType &&
-                    t.Date >= startDate &&
-                    t.Date <= endDate)
+                    t.Date.HasValue &&
+                    t.Date.Value >= startDate
+                    && t.Date.Value <= endDate)
                 .GroupBy(t => new { t.CategoryId, t.Category.Name })
                 .Select(g => new CategorySummaryDto
                 {
@@ -52,10 +53,49 @@ namespace Repositories
                     CategoryName = g.Key.Name,
                     TotalAmount = g.Sum(t => t.Amount)
                 })
-                .OrderByDescending(s => s.TotalAmount)
+                .OrderByDescending(s => s.TotalAmount);
+
+            if (limit.HasValue && limit.Value > 0)
+                query = query.Take(limit.Value);
+
+            return await query.ToListAsync();
+        }
+
+        public async Task<IEnumerable<MonthlyFlowDto>> GetMonthlyCashFlowAsync(int userId, int numberOfMonths)
+        {
+            var startDate = DateTime.UtcNow.AddMonths(-numberOfMonths + 1);
+            var firstDayOfStartMonth = new DateTime(startDate.Year, startDate.Month, 1, 0, 0, 0, DateTimeKind.Utc); // Para que cuente el mes completo del mes de inicio
+
+            var monthlyData = await _context.Transactions
+                .Where(t => t.UserId == userId && t.Date.HasValue && t.Date >= firstDayOfStartMonth)
+                .GroupBy(t => new { t.Date!.Value.Year, t.Date.Value.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    TotalIncome = g.Where(t => t.Category.Type == "INCOME").Sum(t => t.Amount),
+                    TotalExpenses = g.Where(t => t.Category.Type == "EXPENDITURE").Sum(t => t.Amount)
+                })
                 .ToListAsync();
 
-            return query;
+            var result = new List<MonthlyFlowDto>();
+
+            // Se rellenan los meses sin datos con 0
+            for (int i = 0; i < numberOfMonths; i++)
+            {
+                var targetDate = DateTime.UtcNow.AddMonths(-i);
+                var existingMonthData = monthlyData.FirstOrDefault(m => m.Year == targetDate.Year && m.Month == targetDate.Month);
+
+                result.Add(new MonthlyFlowDto
+                {
+                    Year = targetDate.Year,
+                    Month = targetDate.Month,
+                    TotalIncome = existingMonthData?.TotalIncome ?? 0,
+                    TotalExpenses = existingMonthData?.TotalExpenses ?? 0
+                });
+            }
+
+            return result.OrderBy(r => r.Year).ThenBy(r => r.Month);
         }
     }
 }

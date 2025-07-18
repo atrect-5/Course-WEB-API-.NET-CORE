@@ -20,5 +20,13 @@ namespace Services
         /// <param name="userId">The ID of the user.</param>
         /// <returns>A DTO containing the user's financial summary.</returns>
         Task<FinancialSummaryDto?> GetSummaryByUserIdAsync(int userId);
+
+        /// <summary>
+        /// Calculates the monthly cash flow (income vs. expenses) for a user over a specified number of months.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="numberOfMonths">The number of past months to include in the summary.</param>
+        /// <returns>A collection of monthly cash flow summaries.</returns>
+        Task<IEnumerable<MonthlyFlowDto>> GetMonthlyCashFlowAsync(int userId, int numberOfMonths);
     }
 }
