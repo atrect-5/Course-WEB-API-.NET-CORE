@@ -20,6 +20,17 @@ builder.Services.AddScoped<ITransactionService, TransactionRepository>();
 builder.Services.AddScoped<ITransferService, TransferRepository>();
 builder.Services.AddScoped<IStatisticsService, StatisticsRepository>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("https://your-frontend.example.com")
+              .AllowCredentials()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle  
 builder.Services.AddEndpointsApiExplorer();
@@ -110,13 +121,49 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // Check if the token is present in the cookie
+            if (context.Request.Cookies.TryGetValue("AuthToken", out var token) && !string.IsNullOrEmpty(token))
+            {
+                context.Token = token;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 var app = builder.Build();
 
+app.UseCors("AllowFrontend");
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AzulSchoolProject API V1");
+
+    // Fuerza a que las peticiones de Swagger UI incluyan cookies (credentials: 'include')
+    c.HeadContent = """
+    <script>
+    (function() {
+        const originalFetch = window.fetch;
+        window.fetch = function(input, init = {}) {
+            init.credentials = init.credentials || 'include';
+            return originalFetch(input, init);
+        };
+        // También parchear XHR (por si alguna parte de swagger-ui lo usa)
+        const origOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function() {
+            this.withCredentials = true;
+            return origOpen.apply(this, arguments);
+        };
+    })();
+    </script>
+    """;
+});
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 

@@ -16,12 +16,9 @@ namespace AzulSchoolProject.Controllers
         /// Autentica a un usuario y devuelve un token JWT.
         /// </summary>
         /// <param name="loginDto">Las credenciales del usuario (email y contraseña).</param>
-        /// <returns>Un token JWT si la autenticación es exitosa.</returns>
-        /// <response code="200">Retorna el token JWT.</response>
-        /// <response code="401">Si las credenciales son incorrectas.</response>
         [HttpPost("login")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login ([FromBody] LoginDto loginDto)
         {
             var token = await _authenticationService.AuthenticateAsync(loginDto.Email, loginDto.Password);
@@ -29,7 +26,40 @@ namespace AzulSchoolProject.Controllers
             if (string.IsNullOrEmpty(token))
                 return Unauthorized("Credenciales inválidas.");
 
-            return Ok(new { Token = token });
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // ensure HTTPS in production
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(60), // match token lifetime
+                Path = "/"
+            };
+
+            Response.Cookies.Append("AuthToken", token, cookieOptions);
+
+            return Ok(new { Message = "Autenticación exitosa." });
+        }
+
+        /// <summary>
+        /// Elimina la cookie de autenticación en logout.
+        /// </summary>
+        [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Logout()
+        {
+            // Optional server-side cleanup
+            //await _authenticationService.LogoutAsync();
+
+            // Delete cookie
+            Response.Cookies.Delete("AuthToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Path = "/"
+            });
+
+            return NoContent();
         }
     }
 }
