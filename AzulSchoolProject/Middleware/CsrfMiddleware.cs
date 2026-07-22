@@ -1,11 +1,14 @@
 using AzulSchoolProject.Settings;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace AzulSchoolProject.Middleware
 {
-    public class CsrfMiddleware(RequestDelegate next, CookieSettings cookieSettings)
+    public class CsrfMiddleware(RequestDelegate next, CookieSettings cookieSettings, IAntiforgery antiforgery)
     {
         private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
         private readonly CookieSettings _cookieSettings = cookieSettings ?? throw new ArgumentNullException(nameof(cookieSettings));
+        private readonly IAntiforgery _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
+
         // paths to skip CSRF validation (login/logout, swagger, static files, etc.)
         private static readonly string[] _exemptPaths = new[]
         {
@@ -46,7 +49,7 @@ namespace AzulSchoolProject.Middleware
 
             var allowedOrigin = _cookieSettings.AllowedFrontendOrigin ?? string.Empty;
 
-            // Special case: allow user registration (POST /api/users) only if Origin matches allowed frontend OR apiOrigin
+            // Special case: allow user registration (POST /api/user) only if Origin matches allowed frontend OR apiOrigin
             if (HttpMethods.IsPost(req.Method) && path.StartsWith("/api/user", StringComparison.OrdinalIgnoreCase))
             {
                 if (string.IsNullOrEmpty(origin) ||
@@ -75,12 +78,12 @@ namespace AzulSchoolProject.Middleware
                 return;
             }
 
-            // Validate double-submit: header vs cookie
-            req.Cookies.TryGetValue(_cookieSettings.XsrfCookieName, out var cookieToken);
-            var headerToken = req.Headers["X-CSRF-TOKEN"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(cookieToken) || string.IsNullOrEmpty(headerToken) ||
-                !string.Equals(cookieToken, headerToken, StringComparison.Ordinal))
+            // Delegate token validation to ASP.NET Core antiforgery
+            try
+            {
+                await _antiforgery.ValidateRequestAsync(context);
+            }
+            catch (AntiforgeryValidationException)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await context.Response.WriteAsync("Missing or invalid CSRF token.");

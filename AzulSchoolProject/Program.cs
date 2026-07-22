@@ -55,15 +55,13 @@ builder.Services.AddSwaggerGen(options =>
     var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 
-    // Configuracion para que swagger pueda usar autenticacion JWT
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // Esquema ApiKey para XSRF para que Swagger permita introducir manualmente el token.
+    options.AddSecurityDefinition("XSRF", new OpenApiSecurityScheme
     {
+        Type = SecuritySchemeType.ApiKey,
         In = ParameterLocation.Header,
-        Description = "Por favor, introduce un token valido",
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        BearerFormat = "JWT",
-        Scheme = "Bearer"
+        Name = "X-CSRF-TOKEN",
+        Description = "Ingrese manualmente el token XSRF (double-submit)."
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -74,7 +72,7 @@ builder.Services.AddSwaggerGen(options =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Id = "XSRF"
                 }
             },
             Array.Empty<string>()
@@ -165,22 +163,10 @@ app.UseSwaggerUI(c =>
      c.HeadContent = """
         <script>
     (function() {
-      function getCookie(name) {
-        const v = document.cookie.split('; ').find(row => row.trim().startsWith(name + '='));
-        return v ? decodeURIComponent(v.split('=')[1]) : null;
-      }
-
+      // Ensure swagger UI sends cookies (HttpOnly AuthToken) with requests, but DO NOT auto-inject the XSRF cookie into headers.
       const originalFetch = window.fetch;
       window.fetch = function(input, init = {}) {
         init.credentials = init.credentials || 'include';
-        const method = (init.method || 'GET').toUpperCase();
-        if (!['GET','HEAD','OPTIONS'].includes(method)) {
-          init.headers = init.headers || {};
-          if (!init.headers['X-CSRF-TOKEN'] && !init.headers['x-csrf-token']) {
-            const xsrf = getCookie('XSRF-TOKEN');
-            if (xsrf) init.headers['X-CSRF-TOKEN'] = xsrf;
-          }
-        }
         return originalFetch(input, init);
       };
 
@@ -191,12 +177,6 @@ app.UseSwaggerUI(c =>
         return origOpen.apply(this, arguments);
       };
       XMLHttpRequest.prototype.send = function(body) {
-        try {
-          const method = (this._method || '').toUpperCase();
-          // Some swagger-ui flows don't expose method here; fall back to always try for safety
-          const xsrf = getCookie('XSRF-TOKEN');
-          if (xsrf) this.setRequestHeader && this.setRequestHeader('X-CSRF-TOKEN', xsrf);
-        } catch (e) {}
         return origSend.apply(this, arguments);
       };
     })();
