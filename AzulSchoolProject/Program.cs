@@ -29,7 +29,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://your-frontend.example.com") // Once I have Frontend URL, replace this with the actual URL of your frontend application
+        policy.WithOrigins(cookieSettings.AllowedFrontendOrigin)
               .AllowCredentials()
               .AllowAnyHeader()
               .AllowAnyMethod();
@@ -156,8 +156,7 @@ var app = builder.Build();
 app.UseCors("AllowFrontend");
 
 // register CSRF middleware BEFORE authentication so invalid requests are rejected early
-var frontendUrl = builder.Configuration["Frontend:Url"] ?? "https://your-frontend.example.com";
-app.UseMiddleware<CsrfMiddleware>(frontendUrl);
+app.UseMiddleware<CsrfMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>

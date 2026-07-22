@@ -16,5 +16,8 @@ namespace AzulSchoolProject.Settings
         public bool XsrfHttpOnly { get; set; } = false;
         public bool XsrfSecure { get; set; } = true;
         public SameSiteMode XsrfSameSite { get; set; } = SameSiteMode.None;
+
+        // Frontend origin used by CORS and CSRF checks (centralized)
+        public string AllowedFrontendOrigin { get; set; } = "https://your-frontend.example.com"; // Once I have Frontend URL, replace this with the actual URL of your frontend application
     }
 }
