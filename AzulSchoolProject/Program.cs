@@ -7,8 +7,13 @@ using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
 using System.Text;
+using AzulSchoolProject.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Bind cookie settings from configuration (optional) or use defaults
+var cookieSettings = builder.Configuration.GetSection("Cookies").Get<CookieSettings?>() ?? new CookieSettings();
+builder.Services.AddSingleton(cookieSettings);
 
 // Add services to the container. 
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -35,12 +40,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
-    options.Cookie.Name = "XSRF-TOKEN";
-    options.Cookie.HttpOnly = false;
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Name = cookieSettings.XsrfCookieName;
+    options.Cookie.HttpOnly = cookieSettings.XsrfHttpOnly;
+    options.Cookie.SameSite = cookieSettings.XsrfSameSite;
+    options.Cookie.SecurePolicy = cookieSettings.XsrfSecure ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
 });
-
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle  
@@ -138,7 +142,7 @@ builder.Services.AddAuthentication(options =>
         OnMessageReceived = context =>
         {
             // Check if the token is present in the cookie
-            if (context.Request.Cookies.TryGetValue("AuthToken", out var token) && !string.IsNullOrEmpty(token))
+            if (context.Request.Cookies.TryGetValue(cookieSettings.AuthCookieName, out var token) && !string.IsNullOrEmpty(token))
             {
                 context.Token = token;
             }

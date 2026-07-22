@@ -2,15 +2,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Services;
 using Dtos.Authentication;
+using AzulSchoolProject.Settings;
 
 namespace AzulSchoolProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthenticationController(IAuthenticationService authenticationService, IAntiforgery antiforgery) : ControllerBase
+    public class AuthenticationController(IAuthenticationService authenticationService, IAntiforgery antiforgery, CookieSettings cookieSettings) : ControllerBase
     {
         private readonly IAuthenticationService _authenticationService = authenticationService;
         private readonly IAntiforgery _antiforgery = antiforgery;
+        private readonly CookieSettings _cookieSettings = cookieSettings;
 
         /// <summary>
         /// Autentica a un usuario, setea cookie HttpOnly con JWT y devuelve XSRF request token.
@@ -28,14 +30,14 @@ namespace AzulSchoolProject.Controllers
 
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true,
-                Secure = true, // HTTPS required when SameSite=None
-                SameSite = SameSiteMode.None, // allow cross-site requests
-                Expires = DateTimeOffset.UtcNow.AddMinutes(60), // match token lifetime
+                HttpOnly = _cookieSettings.AuthHttpOnly,
+                Secure = _cookieSettings.AuthSecure, 
+                SameSite = _cookieSettings.AuthSameSite, 
+                Expires = DateTimeOffset.UtcNow.AddMinutes(_cookieSettings.AuthExpiresMinutes), 
                 Path = "/"
             };
 
-            Response.Cookies.Append("AuthToken", token, cookieOptions);
+            Response.Cookies.Append(_cookieSettings.AuthCookieName, token, cookieOptions);
 
             // Use antiforgery to create cookie token and return request token
             var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
@@ -51,20 +53,20 @@ namespace AzulSchoolProject.Controllers
         public Task<IActionResult> Logout()
         {
             // Delete cookie JWT
-            Response.Cookies.Delete("AuthToken", new CookieOptions
+            Response.Cookies.Delete(_cookieSettings.AuthCookieName, new CookieOptions
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                HttpOnly = _cookieSettings.AuthHttpOnly,
+                Secure = _cookieSettings.AuthSecure,
+                SameSite = _cookieSettings.AuthSameSite,
                 Path = "/"
             });
 
             // Delete antiforgery cookie (readable one)
-            Response.Cookies.Delete("XSRF-TOKEN", new CookieOptions
+            Response.Cookies.Delete(_cookieSettings.XsrfCookieName, new CookieOptions
             {
-                HttpOnly = false,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                HttpOnly = _cookieSettings.XsrfHttpOnly,
+                Secure = _cookieSettings.XsrfSecure,
+                SameSite = _cookieSettings.XsrfSameSite,
                 Path = "/"
             });
 
