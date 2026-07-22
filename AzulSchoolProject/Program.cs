@@ -24,12 +24,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://your-frontend.example.com")
+        policy.WithOrigins("https://your-frontend.example.com") // Once I have Frontend URL, replace this with the actual URL of your frontend application
               .AllowCredentials()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
+
+// Register antiforgery for SPA double-submit (header + cookie)
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.Cookie.HttpOnly = false;
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle  
@@ -140,29 +151,55 @@ var app = builder.Build();
 
 app.UseCors("AllowFrontend");
 
+// register CSRF middleware BEFORE authentication so invalid requests are rejected early
+var frontendUrl = builder.Configuration["Frontend:Url"] ?? "https://your-frontend.example.com";
+app.UseMiddleware<CsrfMiddleware>(frontendUrl);
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "AzulSchoolProject API V1");
-
-    // Fuerza a que las peticiones de Swagger UI incluyan cookies (credentials: 'include')
-    c.HeadContent = """
-    <script>
+     c.HeadContent = """
+        <script>
     (function() {
-        const originalFetch = window.fetch;
-        window.fetch = function(input, init = {}) {
-            init.credentials = init.credentials || 'include';
-            return originalFetch(input, init);
-        };
-        // También parchear XHR (por si alguna parte de swagger-ui lo usa)
-        const origOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function() {
-            this.withCredentials = true;
-            return origOpen.apply(this, arguments);
-        };
+      function getCookie(name) {
+        const v = document.cookie.split('; ').find(row => row.trim().startsWith(name + '='));
+        return v ? decodeURIComponent(v.split('=')[1]) : null;
+      }
+
+      const originalFetch = window.fetch;
+      window.fetch = function(input, init = {}) {
+        init.credentials = init.credentials || 'include';
+        const method = (init.method || 'GET').toUpperCase();
+        if (!['GET','HEAD','OPTIONS'].includes(method)) {
+          init.headers = init.headers || {};
+          if (!init.headers['X-CSRF-TOKEN'] && !init.headers['x-csrf-token']) {
+            const xsrf = getCookie('XSRF-TOKEN');
+            if (xsrf) init.headers['X-CSRF-TOKEN'] = xsrf;
+          }
+        }
+        return originalFetch(input, init);
+      };
+
+      const origOpen = XMLHttpRequest.prototype.open;
+      const origSend = XMLHttpRequest.prototype.send;
+      XMLHttpRequest.prototype.open = function() {
+        this.withCredentials = true;
+        return origOpen.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.send = function(body) {
+        try {
+          const method = (this._method || '').toUpperCase();
+          // Some swagger-ui flows don't expose method here; fall back to always try for safety
+          const xsrf = getCookie('XSRF-TOKEN');
+          if (xsrf) this.setRequestHeader && this.setRequestHeader('X-CSRF-TOKEN', xsrf);
+        } catch (e) {}
+        return origSend.apply(this, arguments);
+      };
     })();
     </script>
     """;
+     
 });
 
 app.UseMiddleware<ErrorHandlingMiddleware>();

@@ -1,19 +1,19 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Services;
 using Dtos.Authentication;
-using System.Threading.Tasks;
 
 namespace AzulSchoolProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthenticationController(IAuthenticationService authenticationService) : ControllerBase
+    public class AuthenticationController(IAuthenticationService authenticationService, IAntiforgery antiforgery) : ControllerBase
     {
         private readonly IAuthenticationService _authenticationService = authenticationService;
+        private readonly IAntiforgery _antiforgery = antiforgery;
 
         /// <summary>
-        /// Autentica a un usuario y devuelve un token JWT.
+        /// Autentica a un usuario, setea cookie HttpOnly con JWT y devuelve XSRF request token.
         /// </summary>
         /// <param name="loginDto">Las credenciales del usuario (email y contraseña).</param>
         [HttpPost("login")]
@@ -29,15 +29,18 @@ namespace AzulSchoolProject.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // ensure HTTPS in production
-                SameSite = SameSiteMode.Lax,
+                Secure = true, // HTTPS required when SameSite=None
+                SameSite = SameSiteMode.None, // allow cross-site requests
                 Expires = DateTimeOffset.UtcNow.AddMinutes(60), // match token lifetime
                 Path = "/"
             };
 
             Response.Cookies.Append("AuthToken", token, cookieOptions);
 
-            return Ok(new { Message = "Autenticación exitosa." });
+            // Use antiforgery to create cookie token and return request token
+            var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+
+            return Ok(new { Message = "Autenticación exitosa.", XsrfToken = tokens.RequestToken });
         }
 
         /// <summary>
@@ -45,21 +48,27 @@ namespace AzulSchoolProject.Controllers
         /// </summary>
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Logout()
+        public Task<IActionResult> Logout()
         {
-            // Optional server-side cleanup
-            //await _authenticationService.LogoutAsync();
-
-            // Delete cookie
+            // Delete cookie JWT
             Response.Cookies.Delete("AuthToken", new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Lax,
+                SameSite = SameSiteMode.None,
                 Path = "/"
             });
 
-            return NoContent();
+            // Delete antiforgery cookie (readable one)
+            Response.Cookies.Delete("XSRF-TOKEN", new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            });
+
+            return Task.FromResult<IActionResult>(NoContent());
         }
     }
 }
