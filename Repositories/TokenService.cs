@@ -28,7 +28,7 @@ namespace Repositories
             };
 
             var token = new JwtSecurityToken(issuer: jwtSettings["Issuer"], audience: jwtSettings["Audience"], claims: claims,
-                expires: DateTime.Now.AddDays(15), signingCredentials: credentials);
+                expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
