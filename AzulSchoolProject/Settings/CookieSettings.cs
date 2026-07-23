@@ -11,6 +11,10 @@ namespace AzulSchoolProject.Settings
         public SameSiteMode AuthSameSite { get; set; } = SameSiteMode.None; // allow cross-site requests
         public int AuthExpiresMinutes { get; set; } = 60; // match token lifetime
 
+        // Refresh token cookie
+        public string RefreshCookieName { get; set; } = "RefreshToken";
+        public int RefreshExpiresDays { get; set; } = 45;
+
         // Antiforgery (readable) cookie
         public string XsrfCookieName { get; set; } = "XSRF-TOKEN";
         public bool XsrfHttpOnly { get; set; } = false;

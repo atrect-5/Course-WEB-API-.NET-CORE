@@ -11,6 +11,7 @@ namespace Data
     public class ProjectDBContext : DbContext
     {
         public ProjectDBContext(DbContextOptions<ProjectDBContext> options) : base(options) { }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>(entity =>
@@ -67,13 +68,34 @@ namespace Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.ToTable("RefreshToken");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.HasIndex(e => e.TokenHash).IsUnique();
+                entity.HasIndex(e => e.UserId);
+
+                // Relación con User, se borran los tokens si se borra el usuario
+                entity.HasOne(rt => rt.User)
+                      .WithMany(u => u.RefreshTokens)
+                      .HasForeignKey(rt => rt.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Self-reference: token reemplazado por otro token
+                entity.HasOne(rt => rt.ReplacedByToken)
+                      .WithMany()
+                      .HasForeignKey(rt => rt.ReplacedByTokenId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
             base.OnModelCreating(modelBuilder);
         }
-        
+
         public DbSet<User> Users { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<MoneyAccount> MoneyAccounts { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Transfer> Transfers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

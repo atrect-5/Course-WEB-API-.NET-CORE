@@ -15,7 +15,7 @@ namespace Repositories
             if (user is null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
                 return null; // Autenticación fallida.
 
-            return _tokenService.GenerateToken(user);
+            return _tokenService.GenerateJWToken(user);
         }
 
         public Task LogoutAsync()

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace Models
 {
     /// <summary>
@@ -50,6 +45,11 @@ namespace Models
         /// Collection of Categories made by the user
         /// </summary>
         public ICollection<Category>? Categories { get; set; }
+
+        /// <summary>
+        /// Collection of refresh tokens associated with the user.
+        /// </summary>
+        public ICollection<RefreshToken>? RefreshTokens { get; set; }
 
         /// <summary>
         /// The role associated with the user.

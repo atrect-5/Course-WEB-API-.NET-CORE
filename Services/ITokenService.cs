@@ -1,9 +1,5 @@
 ﻿using Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace Services
 {
@@ -14,6 +10,8 @@ namespace Services
         /// </summary>
         /// <param name="user">The user for whom the token is being generated.</param>
         /// <returns>The generated JWT token.</returns>
-        string GenerateToken(User user);
+        string GenerateJWToken(User user);
+
+        
     }
 }

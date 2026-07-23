@@ -12,7 +12,7 @@ namespace Repositories
     public class TokenService(IConfiguration configuration) : ITokenService
     {
         private readonly IConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        public string GenerateToken(User user)
+        public string GenerateJWToken(User user)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
