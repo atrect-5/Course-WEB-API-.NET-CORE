@@ -1,8 +1,4 @@
-﻿using Dtos.User;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace Services
@@ -10,18 +6,15 @@ namespace Services
     public interface IAuthenticationService
     {
         /// <summary>
-        /// Authenticates a user based on their credentials.
+        /// Authenticates a user and also creates a refresh token.
+        /// Returns null on failure; otherwise returns JWT, raw refresh token, refresh expiry and user id.
+        /// The caller should pass the desired refresh token lifespan in days.
         /// </summary>
-        /// <param name="email">The user's email address.</param>
-        /// <param name="password">The user's password.</param>
-        /// <returns>A JWT string if authentication is successful; otherwise, <see langword="null"/>.</returns>
-        Task<string?> AuthenticateAsync(string email, string password);
+        Task<(string Jwt, string RefreshToken, DateTime RefreshExpiresAt, int UserId)?> AuthenticateAsync(string email, string password, string? createdByIp = null, string? userAgent = null, int refreshValidDays = 45);
 
         /// <summary>
-        /// Logs out the current user.
+        /// Logout: revoke the provided raw refresh token (if any).
         /// </summary>
-        /// <remarks>In a stateless JWT implementation, logout is typically handled client-side by deleting the token.
-        /// A server-side implementation would require a token denylist.</remarks>
-        Task LogoutAsync();
+        Task LogoutAsync(string? rawRefreshToken);
     }
 }

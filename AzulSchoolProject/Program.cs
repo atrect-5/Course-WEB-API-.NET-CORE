@@ -17,6 +17,7 @@ builder.Services.AddSingleton(cookieSettings);
 
 // Add services to the container. 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationRepository>();
 builder.Services.AddScoped<IUserService, UserRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryRepository>();
