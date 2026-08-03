@@ -15,6 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 var cookieSettings = builder.Configuration.GetSection("Cookies").Get<CookieSettings?>() ?? new CookieSettings();
 builder.Services.AddSingleton(cookieSettings);
 
+// Bind client settings (contains AllowedFrontendOrigin)
+var clientSettings = builder.Configuration.GetSection("ClientSettings").Get<ClientSettings?>() ?? new ClientSettings();
+builder.Services.AddSingleton(clientSettings);
+
 // Add services to the container. 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenRepository>();
@@ -30,12 +34,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(cookieSettings.AllowedFrontendOrigin)
+        policy.WithOrigins(clientSettings.AllowedFrontendOrigin)
               .AllowCredentials()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
+
 
 // Register antiforgery for SPA double-submit (header + cookie)
 builder.Services.AddAntiforgery(options =>

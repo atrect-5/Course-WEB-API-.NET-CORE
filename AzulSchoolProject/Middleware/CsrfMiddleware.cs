@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Antiforgery;
 
 namespace AzulSchoolProject.Middleware
 {
-    public class CsrfMiddleware(RequestDelegate next, CookieSettings cookieSettings, IAntiforgery antiforgery)
+    public class CsrfMiddleware(RequestDelegate next, ClientSettings clientSettings, IAntiforgery antiforgery)
     {
         private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
-        private readonly CookieSettings _cookieSettings = cookieSettings ?? throw new ArgumentNullException(nameof(cookieSettings));
+        private readonly ClientSettings _clientSettings = clientSettings ?? throw new ArgumentNullException(nameof(clientSettings));
         private readonly IAntiforgery _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
 
         // paths to skip CSRF validation (login/logout, swagger, static files, etc.)
@@ -47,7 +47,7 @@ namespace AzulSchoolProject.Middleware
             // Read Origin/Referer 
             var origin = req.Headers["Origin"].FirstOrDefault() ?? req.Headers["Referer"].FirstOrDefault();
 
-            var allowedOrigin = _cookieSettings.AllowedFrontendOrigin ?? string.Empty;
+            var allowedOrigin = _clientSettings.AllowedFrontendOrigin ?? string.Empty;
 
             // Special case: allow user registration (POST /api/user) only if Origin matches allowed frontend OR apiOrigin
             if (HttpMethods.IsPost(req.Method) && path.StartsWith("/api/user", StringComparison.OrdinalIgnoreCase))
