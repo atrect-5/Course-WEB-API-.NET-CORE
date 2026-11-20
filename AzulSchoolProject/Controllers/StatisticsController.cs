@@ -1,5 +1,6 @@
 ﻿using AzulSchoolProject.Extensions;
 using Dtos.Statistics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Services;
@@ -8,6 +9,7 @@ namespace AzulSchoolProject.Controllers
 {
     [Route("api/users")]
     [ApiController]
+    [Authorize]
     public class StatisticsController(IStatisticsService statisticsService) : ControllerBase
     {
         private readonly IStatisticsService _statisticsService = statisticsService;

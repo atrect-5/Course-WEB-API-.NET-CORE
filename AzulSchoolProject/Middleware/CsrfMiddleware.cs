@@ -9,15 +9,10 @@ namespace AzulSchoolProject.Middleware
         private readonly ClientSettings _clientSettings = clientSettings ?? throw new ArgumentNullException(nameof(clientSettings));
         private readonly IAntiforgery _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
 
-        // paths to skip CSRF validation (login/logout, swagger, static files, etc.)
-        private static readonly string[] _exemptPaths = new[]
-        {
-            "/api/authentication/login",
-            "/api/authentication/logout",
-            "/swagger",
-            "/swagger/index.html",
-            "/swagger/v1/swagger.json"
-        };
+        private static bool IsExemptPath(string path) =>
+            path.Equals("/api/authentication/login", StringComparison.OrdinalIgnoreCase) ||
+            path.Equals("/swagger", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/swagger/", StringComparison.OrdinalIgnoreCase);
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -34,8 +29,7 @@ namespace AzulSchoolProject.Middleware
                 return;
             }
 
-            // Skip exempt paths
-            if (_exemptPaths.Any(p => !string.IsNullOrEmpty(p) && path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            if (IsExemptPath(path))
             {
                 await _next(context);
                 return;
@@ -50,28 +44,22 @@ namespace AzulSchoolProject.Middleware
             var allowedOrigin = _clientSettings.AllowedFrontendOrigin ?? string.Empty;
 
             // Special case: allow user registration (POST /api/user) only if Origin matches allowed frontend OR apiOrigin
-            if (HttpMethods.IsPost(req.Method) && path.StartsWith("/api/user", StringComparison.OrdinalIgnoreCase))
+            if (HttpMethods.IsPost(req.Method) && path.Equals("/api/user", StringComparison.OrdinalIgnoreCase))
             {
-                if (string.IsNullOrEmpty(origin) ||
-                    !(origin.StartsWith(allowedOrigin, StringComparison.OrdinalIgnoreCase) ||
-                      origin.StartsWith(apiOrigin, StringComparison.OrdinalIgnoreCase)))
+                if (!IsAllowedOrigin(origin, allowedOrigin, apiOrigin))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     await context.Response.WriteAsync("Invalid origin for registration.");
                     return;
                 }
 
-                // Se puede agregar captcha aquí si es necesario para prevenir spam de registro.
+                // Se puede agregar captcha aquï¿½ si es necesario para prevenir spam de registro.
                 await _next(context);
                 return;
             }
 
             // Validate Origin or Referer header for other state-changing requests
-            if (string.IsNullOrEmpty(origin) ||
-                !(origin.StartsWith(allowedOrigin, StringComparison.OrdinalIgnoreCase) ||
-                  origin.StartsWith(apiOrigin, StringComparison.OrdinalIgnoreCase) ||
-                  origin.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase) || // allow local dev
-                  origin.StartsWith("https://localhost", StringComparison.OrdinalIgnoreCase)))
+            if (!IsAllowedOrigin(origin, allowedOrigin, apiOrigin))
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await context.Response.WriteAsync("Invalid origin.");
@@ -92,5 +80,29 @@ namespace AzulSchoolProject.Middleware
 
             await _next(context);
         }
+
+        private static bool IsAllowedOrigin(string? origin, string allowedFrontendOrigin, string apiOrigin) =>
+            !string.IsNullOrWhiteSpace(origin) &&
+            (HasSameOrigin(origin, allowedFrontendOrigin) || HasSameOrigin(origin, apiOrigin));
+
+        private static bool HasSameOrigin(string candidate, string expected)
+        {
+            if (!Uri.TryCreate(candidate.Trim(), UriKind.Absolute, out var candidateUri) ||
+                !Uri.TryCreate(expected, UriKind.Absolute, out var expectedUri) ||
+                !IsHttpOrigin(candidateUri) ||
+                !IsHttpOrigin(expectedUri) ||
+                !string.IsNullOrEmpty(candidateUri.UserInfo))
+            {
+                return false;
+            }
+
+            return string.Equals(candidateUri.Scheme, expectedUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(candidateUri.IdnHost, expectedUri.IdnHost, StringComparison.OrdinalIgnoreCase) &&
+                   candidateUri.Port == expectedUri.Port;
+        }
+
+        private static bool IsHttpOrigin(Uri uri) =>
+            uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+            uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
     }
 }
