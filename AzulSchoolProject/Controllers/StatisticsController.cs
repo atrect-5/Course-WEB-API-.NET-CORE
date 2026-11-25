@@ -19,7 +19,7 @@ namespace AzulSchoolProject.Controllers
         /// </summary>
         /// <param name="userId">El ID del usuario para el que se busca la estadística.</param>
         /// <param name="startDate">La fecha de inicio del período (formato: YYYY-MM-DD).</param>
-        /// <param name="endDate">La fecha de fin del período (formato: YYYY-MM-DD).</param>
+        /// <param name="endDate">La fecha final inclusiva del período (formato: YYYY-MM-DD).</param>
         /// <param name="limit">Opcional. Limita el resultado a las 'n' categorías con más gastos.</param>
         /// <returns>Una lista de categorías con el total gastado en cada una.</returns>
         /// <response code="200">Retorna el desglose de gastos.</response>
@@ -35,14 +35,12 @@ namespace AzulSchoolProject.Controllers
             if (!isAdmin && currentUserId != userId)
                 return Forbid();
 
-            // Se selecciona el ultimo mes si no se envia una fecha de inicio y fin
-            var finalEndDate = endDate ?? DateTime.UtcNow;
-            var finalStartDate = startDate ?? finalEndDate.AddMonths(-1);
+            var (finalStartDate, finalEndDateExclusive) = GetDateRange(startDate, endDate);
 
-            if (finalStartDate > finalEndDate)
+            if (finalStartDate >= finalEndDateExclusive)
                 return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
 
-            var result = await _statisticsService.GetSummaryByCategoryAsync(userId, "EXPENDITURE", finalStartDate, finalEndDate, limit);
+            var result = await _statisticsService.GetSummaryByCategoryAsync(userId, "EXPENDITURE", finalStartDate, finalEndDateExclusive, limit);
 
             return Ok(result);
         }
@@ -52,7 +50,7 @@ namespace AzulSchoolProject.Controllers
         /// </summary>
         /// <param name="userId">El ID del usuario para el que se busca la estadística.</param>
         /// <param name="startDate">La fecha de inicio del período (formato: YYYY-MM-DD).</param>
-        /// <param name="endDate">La fecha de fin del período (formato: YYYY-MM-DD).</param>
+        /// <param name="endDate">La fecha final inclusiva del período (formato: YYYY-MM-DD).</param>
         /// <param name="limit">Opcional. Limita el resultado a las 'n' categorías con más ingresos.</param>
         /// <returns>Una lista de categorías con el total de ingresos en cada una.</returns>
         /// <response code="200">Retorna el desglose de gastos.</response>
@@ -68,14 +66,12 @@ namespace AzulSchoolProject.Controllers
             if (!isAdmin && currentUserId != userId)
                 return Forbid();
 
-            // Se selecciona el ultimo mes si no se envia una fecha de inicio y fin
-            var finalEndDate = endDate ?? DateTime.UtcNow;
-            var finalStartDate = startDate ?? finalEndDate.AddMonths(-1);
+            var (finalStartDate, finalEndDateExclusive) = GetDateRange(startDate, endDate);
 
-            if (finalStartDate > finalEndDate)
+            if (finalStartDate >= finalEndDateExclusive)
                 return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
 
-            var result = await _statisticsService.GetSummaryByCategoryAsync(userId, "INCOME", finalStartDate, finalEndDate, limit);
+            var result = await _statisticsService.GetSummaryByCategoryAsync(userId, "INCOME", finalStartDate, finalEndDateExclusive, limit);
 
             return Ok(result);
         }
@@ -123,6 +119,21 @@ namespace AzulSchoolProject.Controllers
             if (months <= 0 || months > 36) return BadRequest("El número de meses debe estar entre 1 y 36");
 
             return Ok(await _statisticsService.GetMonthlyCashFlowAsync(userId, months));
+        }
+
+        private static (DateTime Start, DateTime EndExclusive) GetDateRange(DateTime? startDate, DateTime? endDate)
+        {
+            var now = DateTime.UtcNow;
+            var endExclusive = endDate.HasValue
+                ? DateTime.SpecifyKind(endDate.Value.Date.AddDays(1), DateTimeKind.Utc)
+                : now;
+            var start = startDate.HasValue
+                ? DateTime.SpecifyKind(startDate.Value.Date, DateTimeKind.Utc)
+                : endDate.HasValue
+                    ? endExclusive.AddMonths(-1)
+                    : now.AddMonths(-1);
+
+            return (start, endExclusive);
         }
     }
 }

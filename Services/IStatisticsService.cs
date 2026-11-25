@@ -10,9 +10,9 @@ namespace Services
         /// <param name="userId">The ID of the user.</param>
         /// <param name="categoryType">The type of the category (INCOME or EXPENDITURE).</param>
         /// <param name="startDate">The start date of the period.</param>
-        /// <param name="endDate">The end date of the period.</param>
+        /// <param name="endDateExclusive">The exclusive upper bound of the period, in UTC.</param>
         /// <returns>A list of categories with their corresponding total spending.</returns>
-        Task<IEnumerable<CategorySummaryDto>> GetSummaryByCategoryAsync(int userId, string categoryType, DateTime startDate, DateTime endDate, int? limit = null);
+        Task<IEnumerable<CategorySummaryDto>> GetSummaryByCategoryAsync(int userId, string categoryType, DateTime startDate, DateTime endDateExclusive, int? limit = null);
 
         /// <summary>
         /// Calculates and retrieves the financial summary for a specific user.

@@ -34,7 +34,7 @@ namespace Repositories
             };
         }
 
-        public async Task<IEnumerable<CategorySummaryDto>> GetSummaryByCategoryAsync(int userId, string categoryType, DateTime startDate, DateTime endDate, int? limit = null)
+        public async Task<IEnumerable<CategorySummaryDto>> GetSummaryByCategoryAsync(int userId, string categoryType, DateTime startDate, DateTime endDateExclusive, int? limit = null)
         {
             if (categoryType != "INCOME" && categoryType != "EXPENDITURE")
                 throw new ArgumentException("El tipo de categoría debe ser 'INCOME' o 'EXPENDITURE'.", nameof(categoryType));
@@ -45,7 +45,7 @@ namespace Repositories
                     t.Category.Type == categoryType &&
                     t.Date.HasValue &&
                     t.Date.Value >= startDate
-                    && t.Date.Value <= endDate)
+                    && t.Date.Value < endDateExclusive)
                 .GroupBy(t => new { t.CategoryId, t.Category.Name })
                 .Select(g => new CategorySummaryDto
                 {
