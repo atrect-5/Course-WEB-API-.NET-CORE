@@ -46,10 +46,26 @@ namespace Services
         Task<UserDto?> UpdateAsync(int id, UpdateUserDto model);
 
         /// <summary>
+        /// Changes a user's password after verifying their current password.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user.</param>
+        /// <param name="currentPassword">The user's current password.</param>
+        /// <param name="newPassword">The new password to save.</param>
+        /// <returns>The result of attempting to change the password.</returns>
+        Task<ChangePasswordResult> ChangePasswordAsync(int id, string currentPassword, string newPassword);
+
+        /// <summary>
         /// Deletes the entity with the specified identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the entity to delete. Must be a positive integer.</param>
         /// <returns><see langword="true"/> if the entity was successfully deleted; otherwise, <see langword="false"/>.</returns>
         Task<bool> DeleteAsync(int id);
+    }
+
+    public enum ChangePasswordResult
+    {
+        Success,
+        UserNotFound,
+        InvalidCurrentPassword
     }
 }

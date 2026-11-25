@@ -95,6 +95,36 @@ namespace AzulSchoolProject.Controllers
         }
 
         /// <summary>
+        /// Cambia la contraseña del usuario autenticado después de verificar la contraseña actual.
+        /// </summary>
+        /// <param name="changePasswordDto">La contraseña actual y la nueva contraseña.</param>
+        /// <response code="204">La contraseña fue actualizada.</response>
+        /// <response code="400">La contraseña actual es incorrecta.</response>
+        /// <response code="401">El usuario no está autenticado.</response>
+        /// <response code="404">No se encontró el usuario asociado al token.</response>
+        [HttpPut("me/password")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ChangePasswordAsync([FromBody] ChangePasswordDto changePasswordDto)
+        {
+            var result = await _userService.ChangePasswordAsync(
+                User.GetUserId(),
+                changePasswordDto.CurrentPassword,
+                changePasswordDto.NewPassword);
+
+            return result switch
+            {
+                ChangePasswordResult.Success => NoContent(),
+                ChangePasswordResult.InvalidCurrentPassword => BadRequest("La contraseña actual es incorrecta."),
+                ChangePasswordResult.UserNotFound => NotFound(),
+                _ => throw new InvalidOperationException("Resultado de cambio de contraseña desconocido.")
+            };
+        }
+
+        /// <summary>
         /// Elimina un usuario por su ID.
         /// </summary>
         /// <param name="id">El ID del usuario a eliminar.</param>

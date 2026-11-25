@@ -1,6 +1,20 @@
 @AzulSchoolProject_HostAddress = http://localhost:5252
+@jwtToken = replace-with-jwt
+@xsrfCookie = replace-with-xsrf-cookie-value
+@xsrfRequestToken = replace-with-xsrf-request-token
 
 GET {{AzulSchoolProject_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Change password for the authenticated user
+PUT {{AzulSchoolProject_HostAddress}}/api/User/me/password
+Content-Type: application/json
+Cookie: AuthToken={{jwtToken}}; XSRF-TOKEN={{xsrfCookie}}
+X-CSRF-TOKEN: {{xsrfRequestToken}}
+
+{
+  "currentPassword": "current-password",
+  "newPassword": "new-password"
+}

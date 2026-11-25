@@ -73,11 +73,23 @@ namespace Repositories
             // Actualiza si es que se mando la informacion
             if (!string.IsNullOrWhiteSpace(updateUserDto.Name))
                 userInDb.Name = updateUserDto.Name;
-            if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
-                userInDb.Password = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Password);
                 
             await _dbContext.SaveChangesAsync();
             return new UserDto { Id = userInDb.Id, Name = userInDb.Name, Email = userInDb.Email};
+        }
+
+        public async Task<ChangePasswordResult> ChangePasswordAsync(int id, string currentPassword, string newPassword)
+        {
+            var user = await _dbContext.Users.FindAsync(id);
+            if (user is null)
+                return ChangePasswordResult.UserNotFound;
+
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.Password))
+                return ChangePasswordResult.InvalidCurrentPassword;
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _dbContext.SaveChangesAsync();
+            return ChangePasswordResult.Success;
         }
     }
 }
